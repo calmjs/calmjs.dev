@@ -34,35 +34,37 @@ Features
 - Provides a set of commonly used development tools that are commonly
   used for testing JavaScript code.  In brief, these include:
 
-  |grunt|_
-      JavaScript task runner for running tests, minifying bundled code
   |karma|_
       Test runner for running tests included with packages against the
       JavaScript code contained there.
+  |mocha|_
+      A JavaScript test framework for writing unit tests for node.js or
+      the browser.
   |phantomjs|_
       A headless webkit with JavaScript API capable of interfacing with
       karma; this enables the running of integration JavaScript tests.
   |sinon|_
-      Standalone and test framework agnostic JavaScript test spies,
-      stubs and mocks.
+      A set of spies stubs and mocks for JavaScript for working with a
+      unit testing framework.
 
-  Plus other integration packages that get them to work with each other.
+  Plus other integration packages that get them to work with each other,
+  namely the various ``karma-*`` packages for integration with |karma|.
 
 - Through the use of ``calmjs.module`` registry, which exposes the
-  declared Python modules as providers of JavaScript modules, to
-  generate the required configuration files for the supported JavaScript
-  development tools here.  Details of the various implementation will be
+  declared Python modules as providers of JavaScript modules, generate
+  the required configuration files for the supported JavaScript
+  development tools.  Details of the various implementation will be
   specific to the software packages involved.
 
 - A declared set of development dependencies.  This is reusable through
   the |setuptools|_ extensions provided by |calmjs|_.
 
-.. |grunt| replace:: ``grunt``
 .. |karma| replace:: ``karma``
+.. |mocha| replace:: ``mocha``
 .. |phantomjs| replace:: ``phantomjs``
 .. |sinon| replace:: ``sinon``
-.. _grunt: https://www.npmjs.com/package/grunt
 .. _karma: https://www.npmjs.com/package/karma
+.. _mocha: https://www.npmjs.com/package/mocha
 .. _phantomjs: https://www.npmjs.com/package/phantomjs-prebuilt
 .. _sinon: https://www.npmjs.com/package/sinon
 

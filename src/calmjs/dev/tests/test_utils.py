@@ -26,3 +26,42 @@ class ToolchainTargetsTestCase(unittest.TestCase):
         result = list(utils.get_toolchain_targets_keys(
             toolchain, include_targets_from=('explicit',)))
         self.assertEqual(result, ['explicit_targets'])
+
+
+class TargetsFromSpecTestCase(unittest.TestCase):
+
+    def test_basic(self):
+        spec = {
+            'transpiled_targets': {
+                't1': '/path/to/t1.js',
+                't2': '/path/to/t2.js',
+            },
+            'moved_targets': {
+                'm1': '/move/to/m1.js',
+                'm2': '/move/to/m2.js',
+            },
+        }
+        targets = ['transpiled_targets', 'moved_targets']
+        result = utils.get_targets_from_spec(spec, targets)
+        self.assertEqual(sorted(result), [
+            '/move/to/m1.js', '/move/to/m2.js',
+            '/path/to/t1.js', '/path/to/t2.js',
+        ])
+
+    def test_all_iter(self):
+        spec = {
+            'transpiled_targets': {
+                't1': '/path/to/t1.js',
+                't2': '/path/to/t2.js',
+            },
+            'moved_targets': {
+                'm1': '/move/to/m1.js',
+                'm2': '/move/to/m2.js',
+            },
+        }
+        targets = iter(['transpiled_targets', 'moved_targets'])
+        result = utils.get_targets_from_spec(spec, targets)
+        self.assertEqual(sorted(result), [
+            '/move/to/m1.js', '/move/to/m2.js',
+            '/path/to/t1.js', '/path/to/t2.js',
+        ])

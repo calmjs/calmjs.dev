@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from itertools import chain
+
 
 def get_toolchain_targets_keys(
         toolchain, include_targets_from=(), exclude_targets_from=('bundled',)):
@@ -29,3 +31,12 @@ def get_toolchain_targets_keys(
             include_targets_from if include_targets_from else all_pfx)
         if p not in exclude_targets_from
     )
+
+
+def get_targets_from_spec(spec, spec_keys):
+    """
+    Used in conjunction with the output from get_toolchain_targets_keys,
+    to pull the actual file targets from a given spec.
+    """
+
+    return chain.from_iterable(spec.get(key, {}).values() for key in spec_keys)

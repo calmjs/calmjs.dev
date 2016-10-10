@@ -32,28 +32,39 @@ package_json = {
 }
 
 
-setup(name='calmjs.dev',
-      version=version,
-      description="JavaScript development tools through the calmjs framework",
-      long_description=long_description,
-      classifiers=[
-          "Programming Language :: Python",
-      ],
-      keywords='',
-      author='Tommy Yu',
-      author_email='tommy.yu@auckland.ac.nz',
-      url='https://github.com/calmjs/calmjs.dev',
-      license='gpl',
-      packages=find_packages('src'),
-      package_dir = {'': 'src'},
-      namespace_packages=['calmjs'],
-      include_package_data=True,
-      zip_safe=False,
-      install_requires=[
-          'calmjs',
-      ],
-      package_json=package_json,
-      entry_points="""
-      # -*- Entry points: -*-
-      """,
-      )
+setup(
+    name='calmjs.dev',
+    version=version,
+    description="JavaScript development tools through the calmjs framework",
+    long_description=long_description,
+    classifiers=[
+        "Programming Language :: Python",
+    ],
+    keywords='',
+    author='Tommy Yu',
+    author_email='tommy.yu@auckland.ac.nz',
+    url='https://github.com/calmjs/calmjs.dev',
+    license='gpl',
+    packages=find_packages('src'),
+    package_dir = {'': 'src'},
+    namespace_packages=['calmjs'],
+    include_package_data=True,
+    zip_safe=False,
+    install_requires=[
+        'calmjs',
+    ],
+    package_json=package_json,
+    entry_points={
+        'calmjs.registry': [
+            # for pure development of calmjs.dev
+            'calmjs.dev.module = calmjs.module:ModuleRegistry',
+            'calmjs.dev.module.tests = calmjs.module:ModuleRegistry',
+        ],
+        'calmjs.dev.module': [
+            'calmjs.dev = calmjs.dev',
+        ],
+        'calmjs.dev.module.tests': [
+            'calmjs.dev.tests = calmjs.dev.tests',
+        ],
+    },
+)

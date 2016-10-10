@@ -7,13 +7,19 @@ import logging
 from os.path import join
 from subprocess import call
 
-from calmjs.toolchain import BUILD_DIR
 from calmjs.toolchain import BEFORE_TEST
 from calmjs.toolchain import AFTER_TEST
 from calmjs.toolchain import AFTER_FINALIZE
+from calmjs.toolchain import BUILD_DIR
+
+from calmjs.toolchain import CALMJS_MODULE_REGISTRY_NAMES
+from calmjs.toolchain import SOURCE_PACKAGE_NAMES
+from calmjs.toolchain import TEST_MODULE_PATHS
+
 from calmjs.cli import NodeDriver
 from calmjs.cli import get_bin_version
 
+from calmjs.dev import dist
 from calmjs.dev import karma
 from calmjs.dev import utils
 
@@ -86,11 +92,22 @@ class KarmaDriver(NodeDriver):
             [self.binary, 'start', config_fn], **call_kw)
 
     def write_config(self, spec, spec_keys):
+        # Extract the available data stored in the spec.
         build_dir = spec[BUILD_DIR]
+        source_package_names = spec.get(SOURCE_PACKAGE_NAMES)
+        module_registries = spec.get(CALMJS_MODULE_REGISTRY_NAMES, [])
+
+        # calculate, extract and persist the test module names
+        test_module_paths = spec[TEST_MODULE_PATHS] = spec.get(
+            TEST_MODULE_PATHS, [])
+        test_module_paths.extend(
+            dist.get_module_default_test_registries_dependencies(
+                source_package_names, module_registries).values())
+
         config = karma.build_base_config()
         files = utils.get_targets_from_spec(spec, spec_keys)
-        # XXX this is a very temporary arrangement; need formalization
-        config['files'] = list(files) + spec.get('test_modules', [])
+
+        config['files'] = list(files) + test_module_paths
 
         s = self.dumps(config)
         config_fn = join(build_dir, self.karma_conf_js)
@@ -99,6 +116,7 @@ class KarmaDriver(NodeDriver):
         return config_fn
 
     def test_spec(self, spec, spec_keys):
+        # XXX the config should be available before the test?
         spec.do_events(BEFORE_TEST)
         # XXX formalize key
         config_fn = self.write_config(spec, spec_keys)

@@ -9,6 +9,8 @@ from calmjs.cli import node
 from calmjs.cli import get_node_version
 from calmjs.toolchain import NullToolchain
 from calmjs.toolchain import Spec
+from calmjs.toolchain import CALMJS_MODULE_REGISTRY_NAMES
+from calmjs.toolchain import BEFORE_TEST
 from calmjs.toolchain import BEFORE_TEST
 from calmjs.toolchain import AFTER_TEST
 from calmjs.dev import cli
@@ -94,16 +96,30 @@ class KarmaDriverRunTestCase(unittest.TestCase):
         # TODO figure out whether empty tests always return 1
         self.assertIn('karma_return_code', spec)
 
-    def test_standard_success_run(self):
+    def test_standard_manual_tests_success_run(self):
         main = resource_filename('calmjs.dev', 'main.js')
         test_main = resource_filename('calmjs.dev.tests', 'test_main.js')
         spec = Spec(
             transpile_source_map={
                 'calmjs/dev/main': main,
             },
-            test_modules=[
+            test_module_paths=[
                 test_main,
             ]
+        )
+        toolchain = NullToolchain()
+        self.driver.run(toolchain, spec)
+        self.assertEqual(spec['karma_return_code'], 0)
+
+    def test_standard_registry_test_success_run(self):
+        main = resource_filename('calmjs.dev', 'main.js')
+        test_main = resource_filename('calmjs.dev.tests', 'test_main.js')
+        spec = Spec(
+            source_package_names=['calmjs.dev'],
+            calmjs_module_registry_names=['calmjs.dev.module'],
+            transpile_source_map={
+                'calmjs/dev/main': main,
+            },
         )
         toolchain = NullToolchain()
         self.driver.run(toolchain, spec)

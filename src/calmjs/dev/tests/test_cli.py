@@ -16,6 +16,7 @@ from calmjs.toolchain import AFTER_TEST
 from calmjs.dev import cli
 
 from calmjs.testing.utils import mkdtemp
+from calmjs.testing.utils import stub_mod_call
 
 # XXX static setup
 karma = cli.KarmaDriver.create()
@@ -31,20 +32,30 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
     """
 
     def test_base(self):
-        spec_keys = []
+        stub_mod_call(self, cli)
         build_dir = mkdtemp(self)
-        driver = cli.KarmaDriver()
+        driver = cli.KarmaDriver.create()
+        toolchain = NullToolchain()
         spec = Spec(build_dir=build_dir)
-        driver.test_spec(spec, spec_keys)
-        self.assertTrue(exists(join(build_dir, 'karma.conf.js')))
+        driver.setup_toolchain_spec(toolchain, spec)
+        driver.test_spec(spec)
+
+        conf = join(build_dir, 'karma.conf.js')
+        self.assertTrue(exists(conf))
+        args = self.call_args[0][0]
+        self.assertIn('karma', args[0])
+        self.assertEqual('start', args[1])
+        self.assertEqual(conf, args[2])
 
     @unittest.skipIf(node_version is None, 'node.js not found')
-    def test_config_written(self):
-        spec_keys = []
+    def test_config_written_correctly(self):
+        stub_mod_call(self, cli)
         build_dir = mkdtemp(self)
-        driver = cli.KarmaDriver()
+        driver = cli.KarmaDriver.create()
+        toolchain = NullToolchain()
         spec = Spec(build_dir=build_dir)
-        driver.test_spec(spec, spec_keys)
+        driver.setup_toolchain_spec(toolchain, spec)
+        driver.test_spec(spec)
 
         # verify that the resulting file is a function that expect a
         # function that accepts an object, that is the configuration.
@@ -55,19 +66,18 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
         )[0])
         self.assertTrue(isinstance(result, dict))
 
-    def test_events(self):
+    def test_advices(self):
+        stub_mod_call(self, cli)
         build_dir = mkdtemp(self)
-        spec_keys = []
-        events = []
-        driver = cli.KarmaDriver()
+        advices = []
+        driver = cli.KarmaDriver.create()
         spec = Spec(build_dir=build_dir)
-        spec.on_event(AFTER_TEST, events.append, AFTER_TEST)
-        spec.on_event(BEFORE_TEST, events.append, BEFORE_TEST)
-        spec.on_event(driver.RUN_KARMA, events.append, driver.RUN_KARMA)
-        driver.test_spec(spec, spec_keys)
+        spec.advise(AFTER_TEST, advices.append, AFTER_TEST)
+        spec.advise(BEFORE_TEST, advices.append, BEFORE_TEST)
+        driver.test_spec(spec)
         # XXX should AFTER_TEST also run if test failed?
-        # XXX what other events should apply, i.e. failure/error/success
-        self.assertEqual(events, [BEFORE_TEST, driver.RUN_KARMA, AFTER_TEST])
+        # XXX what other advices should apply, i.e. failure/error/success
+        self.assertEqual(advices, [BEFORE_TEST, AFTER_TEST])
 
 
 # TODO figure out whether using a whatever version found is sane instead
@@ -88,10 +98,10 @@ class KarmaDriverRunTestCase(unittest.TestCase):
 
     def test_empty_manual_run(self):
         build_dir = mkdtemp(self)
-        spec_keys = []
+        toolchain = NullToolchain()
         spec = Spec(build_dir=build_dir)
-        self.driver.test_spec(spec, spec_keys)
-        self.driver.karma(spec)
+        self.driver.setup_toolchain_spec(toolchain, spec)
+        self.driver.test_spec(spec)
         # at least write that code.
         # TODO figure out whether empty tests always return 1
         self.assertIn('karma_return_code', spec)
@@ -100,6 +110,7 @@ class KarmaDriverRunTestCase(unittest.TestCase):
         main = resource_filename('calmjs.dev', 'main.js')
         test_main = resource_filename('calmjs.dev.tests', 'test_main.js')
         spec = Spec(
+            # null toolchain does not prepare this
             transpile_source_map={
                 'calmjs/dev/main': main,
             },
@@ -117,6 +128,7 @@ class KarmaDriverRunTestCase(unittest.TestCase):
         spec = Spec(
             source_package_names=['calmjs.dev'],
             calmjs_module_registry_names=['calmjs.dev.module'],
+            # null toolchain does not prepare this
             transpile_source_map={
                 'calmjs/dev/main': main,
             },

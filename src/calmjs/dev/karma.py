@@ -3,12 +3,18 @@
 Module that provides integration with karma.
 """
 
+BEFORE_KARMA = 'before_karma'
+AFTER_KARMA = 'after_karma'
+
 KARMA_CONF_TEMPLATE = '''\
 module.exports = function(config) {
     config.set(%s);
 }
 '''
 
+KARMA_SPEC_KEYS = 'karma_spec_keys'
+KARMA_CONFIG = 'karma_config'
+KARMA_CONFIG_PATH = 'karma_config_path'
 KARMA_CONF_JS = 'karma.conf.js'
 
 

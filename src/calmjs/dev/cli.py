@@ -50,7 +50,7 @@ class KarmaDriver(NodeDriver):
     def __init__(
             self,
             binary='karma', karma_conf_js=karma.KARMA_CONF_JS,
-            testrunner_event=AFTER_FINALIZE,
+            testrunner_advice_name=AFTER_FINALIZE,
             *a, **kw):
         """
         Arguments
@@ -59,17 +59,14 @@ class KarmaDriver(NodeDriver):
             The name of the karma server binary; defaults to karma.
         karma_conf_js
             Name of generated config script; defaults to karma.conf.js
-        testrunner_event
-            The event to trigger the test on.
+        testrunner_advice_name
+            The advice name to trigger the test on.
         """
 
         super(KarmaDriver, self).__init__(*a, **kw)
         self.binary = binary
-        self.testrunner_event = testrunner_event
+        self.testrunner_advice_name = testrunner_advice_name
         self.karma_conf_js = karma_conf_js
-
-        # the event that will actually run karma is separate.
-        self.RUN_KARMA = object()
 
     def get_karma_version(self):
         kw = self._gen_call_kws()
@@ -80,6 +77,8 @@ class KarmaDriver(NodeDriver):
         Start karma with the provided spec
         """
 
+        spec.handle(karma.BEFORE_KARMA)
+
         config_fn = join(spec[BUILD_DIR], self.karma_conf_js)
         call_kw = self._gen_call_kws()
         logger.info('invoking %s start %r', self.binary, config_fn)
@@ -88,12 +87,14 @@ class KarmaDriver(NodeDriver):
         # perhaps the provided spec can contain well-defined keywords
         # that can be passed to the `call` function (extend call_kw).
         # For now at least log this down like so.
+        binary = self.which()
         spec['karma_return_code'] = call(
             [self.binary, 'start', config_fn], **call_kw)
 
-    def write_config(self, spec, spec_keys):
+        spec.handle(karma.AFTER_KARMA)
+
+    def _create_config(self, spec, spec_keys):
         # Extract the available data stored in the spec.
-        build_dir = spec[BUILD_DIR]
         source_package_names = spec.get(SOURCE_PACKAGE_NAMES)
         module_registries = spec.get(CALMJS_MODULE_REGISTRY_NAMES, [])
 
@@ -106,23 +107,40 @@ class KarmaDriver(NodeDriver):
 
         config = karma.build_base_config()
         files = utils.get_targets_from_spec(spec, spec_keys)
-
         config['files'] = list(files) + test_module_paths
+        return config
 
-        s = self.dumps(config)
+    def create_config(self, spec):
+        spec_keys = spec[karma.KARMA_SPEC_KEYS]
+        spec[karma.KARMA_CONFIG] = self._create_config(spec, spec_keys)
+
+    def _write_config(self, spec):
+        # grab the config from the spec.
+        s = self.dumps(spec[karma.KARMA_CONFIG])
+        build_dir = spec[BUILD_DIR]
         config_fn = join(build_dir, self.karma_conf_js)
         with open(config_fn, 'w') as fd:
             fd.write(karma.KARMA_CONF_TEMPLATE % s)
         return config_fn
 
-    def test_spec(self, spec, spec_keys):
-        # XXX the config should be available before the test?
-        spec.do_events(BEFORE_TEST)
-        # XXX formalize key
-        config_fn = self.write_config(spec, spec_keys)
-        spec['karma_config'] = config_fn
-        spec.do_events(self.RUN_KARMA)
-        spec.do_events(AFTER_TEST)
+    def write_config(self, spec):
+        spec[karma.KARMA_CONFIG_PATH] = self._write_config(spec)
+
+    def test_spec(self, spec):
+        spec.handle(BEFORE_TEST)
+        self.karma(spec)
+        spec.handle(AFTER_TEST)
+
+    def setup_toolchain_spec(self, toolchain, spec):
+        """
+        Setup a spec for execution
+        """
+
+        spec[karma.KARMA_SPEC_KEYS] = utils.get_toolchain_targets_keys(
+            toolchain, exclude_targets_from=())
+        spec.advise(self.testrunner_advice_name, self.test_spec, spec)
+        spec.advise(BEFORE_TEST, self.create_config, spec)
+        spec.advise(karma.BEFORE_KARMA, self.write_config, spec)
 
     def run(self, toolchain, spec):
         """
@@ -136,7 +154,5 @@ class KarmaDriver(NodeDriver):
         # the spec.
         # XXX the list of include/exclude need to be provided to here
         # somehow?
-        spec_keys = utils.get_toolchain_targets_keys(toolchain)
-        spec.on_event(self.testrunner_event, self.test_spec, spec, spec_keys)
-        spec.on_event(self.RUN_KARMA, self.karma, spec)
+        self.setup_toolchain_spec(toolchain, spec)
         toolchain(spec)

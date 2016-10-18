@@ -88,8 +88,12 @@ class KarmaDriver(NodeDriver):
         # that can be passed to the `call` function (extend call_kw).
         # For now at least log this down like so.
         binary = self.which()
+        # but actually run it with the '--color' flag, because otherwise
+        # colors don't work consistently... Node.js tools in a nutshell.
+        # ... at least disable colours in the config file will also make
+        # this option disabled.
         spec['karma_return_code'] = call(
-            [self.binary, 'start', config_fn], **call_kw)
+            [binary, 'start', config_fn, '--color'], **call_kw)
 
         spec.handle(karma.AFTER_KARMA)
 

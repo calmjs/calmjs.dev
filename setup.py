@@ -46,7 +46,7 @@ setup(
     url='https://github.com/calmjs/calmjs.dev',
     license='gpl',
     packages=find_packages('src'),
-    package_dir = {'': 'src'},
+    package_dir={'': 'src'},
     namespace_packages=['calmjs'],
     include_package_data=True,
     zip_safe=False,
@@ -65,6 +65,9 @@ setup(
         ],
         'calmjs.dev.module.tests': [
             'calmjs.dev.tests = calmjs.dev.tests',
+        ],
+        'calmjs.runtime': [
+            'karma = calmjs.dev.runtime:karma',
         ],
     },
 )

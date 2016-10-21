@@ -137,7 +137,7 @@ class KarmaDriver(NodeDriver):
 
     def setup_toolchain_spec(self, toolchain, spec):
         """
-        Setup a spec for execution
+        Setup a spec for execution.
         """
 
         spec[karma.KARMA_SPEC_KEYS] = utils.get_toolchain_targets_keys(
@@ -153,10 +153,5 @@ class KarmaDriver(NodeDriver):
         Will be invoked from a toolchain success
         """
 
-        # XXX the runtime analogous will have to deal with getting the
-        # actual runtime and then use its make_spec method to generate
-        # the spec.
-        # XXX the list of include/exclude need to be provided to here
-        # somehow?
         self.setup_toolchain_spec(toolchain, spec)
         toolchain(spec)

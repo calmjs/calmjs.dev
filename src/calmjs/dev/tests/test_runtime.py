@@ -88,7 +88,6 @@ class RuntimeTestCase(unittest.TestCase):
         self.assertIn('karma_config_path', result)
         self.assertTrue(exists(result['karma_config_path']))
 
-    @unittest.skipIf(sys.version_info < (3, 3), 'require python 3.3+')
     def test_missing_runtime_arg(self):
         stub_stdouts(self)
         stub_item_attr_value(

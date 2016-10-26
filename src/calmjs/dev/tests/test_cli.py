@@ -62,7 +62,7 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
         result = json.loads(node(
             'require("%s")({set: function(a) {\n'
             '    process.stdout.write(JSON.stringify(a));\n'
-            '}});\n' % join(build_dir, 'karma.conf.js')
+            '}});\n' % join(build_dir, 'karma.conf.js').replace('\\', '\\\\')
         )[0])
         self.assertTrue(isinstance(result, dict))
 

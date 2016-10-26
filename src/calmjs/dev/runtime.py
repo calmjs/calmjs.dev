@@ -65,22 +65,21 @@ class KarmaRuntime(Runtime, DriverRuntime):
                  'to see which ones were selected',
         )
 
+    def _run_runtime(self, runtime, **kwargs):
+        spec = runtime.kwargs_to_spec(**kwargs)
+        toolchain = runtime.toolchain
+        self.cli_driver.run(toolchain, spec)
+        return spec
+
     def run(self, argparser, **kwargs):
         # have to rely on the local one, because the passed in one will
         # be the root one.
         details = self.get_argparser_details(self.argparser)
         runtime = details.runtimes.get(kwargs.pop(self.action_key))
-        if not runtime:
-            # only work for python>3.3 typically as the python 2.7
-            # argparser will choke without sufficient arguments.
-            logger.warning('no runtime provided; please retry with -h option')
-            # not using self.argparser because it will not have the
-            # global flag set from the global argparser.
-            return
+        if runtime:
+            return self._run_runtime(runtime, **kwargs)
 
-        spec = runtime.kwargs_to_spec(**kwargs)
-        toolchain = runtime.toolchain
-        self.cli_driver.run(toolchain, spec)
-        return spec
+        argparser.print_help()
+        return
 
 karma = KarmaRuntime(KarmaDriver.create())

@@ -104,7 +104,10 @@ class RuntimeTestCase(unittest.TestCase):
         with pretty_logging(
                 logger='calmjs.dev', stream=mocks.StringIO()) as log:
             rt([])
-        self.assertIn('no runtime provided', log.getvalue())
+        # standard help printed
+        self.assertIn('usage:', sys.stdout.getvalue())
+        self.assertIn(
+            'karma testrunner integration for calmjs', sys.stdout.getvalue())
 
     def test_main_integration(self):
         stub_stdouts(self)

@@ -7,6 +7,8 @@ import logging
 from os.path import join
 from subprocess import call
 
+from calmjs.exc import AdviceAbort
+
 from calmjs.toolchain import BEFORE_TEST
 from calmjs.toolchain import AFTER_TEST
 from calmjs.toolchain import AFTER_FINALIZE
@@ -88,6 +90,8 @@ class KarmaDriver(NodeDriver):
         # that can be passed to the `call` function (extend call_kw).
         # For now at least log this down like so.
         binary = self.which()
+        if binary is None:
+            raise AdviceAbort('karma not found')
         # but actually run it with the '--color' flag, because otherwise
         # colors don't work consistently... Node.js tools in a nutshell.
         # ... at least disable colours in the config file will also make

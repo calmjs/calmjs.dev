@@ -7,6 +7,7 @@ from pkg_resources import resource_filename
 
 from calmjs.cli import node
 from calmjs.cli import get_node_version
+from calmjs.exc import ToolchainAbort
 from calmjs.toolchain import NullToolchain
 from calmjs.toolchain import Spec
 from calmjs.toolchain import BEFORE_TEST
@@ -76,6 +77,17 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
         # XXX should AFTER_TEST also run if test failed?
         # XXX what other advices should apply, i.e. failure/error/success
         self.assertEqual(advices, [BEFORE_TEST, AFTER_TEST])
+
+    def test_broken_binary(self):
+        build_dir = mkdtemp(self)
+        toolchain = NullToolchain()
+        spec = Spec(build_dir=build_dir)
+        driver = cli.KarmaDriver()
+        driver.binary = None
+        driver.setup_toolchain_spec(toolchain, spec)
+        with self.assertRaises(ToolchainAbort):
+            driver.test_spec(spec)
+        self.assertNotIn('karma_return_code', spec)
 
 
 # TODO figure out whether using a whatever version found is sane instead

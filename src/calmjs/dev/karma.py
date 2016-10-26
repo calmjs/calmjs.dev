@@ -3,8 +3,17 @@
 Module that provides integration with karma.
 """
 
-BEFORE_KARMA = 'before_karma'
+# spec keys
 AFTER_KARMA = 'after_karma'
+BEFORE_KARMA = 'before_karma'
+KARMA_ABORT_ON_TEST_FAILURE = 'karma_abort_on_test_failure'
+KARMA_ADVICE_GROUP = 'karma_advice_group'
+KARMA_CONFIG = 'karma_config'
+KARMA_CONFIG_PATH = 'karma_config_path'
+KARMA_RETURN_CODE = 'karma_return_code'
+KARMA_SPEC_KEYS = 'karma_spec_keys'
+
+# templates
 
 KARMA_CONF_TEMPLATE = '''\
 module.exports = function(config) {
@@ -12,9 +21,7 @@ module.exports = function(config) {
 }
 '''
 
-KARMA_SPEC_KEYS = 'karma_spec_keys'
-KARMA_CONFIG = 'karma_config'
-KARMA_CONFIG_PATH = 'karma_config_path'
+# other constants
 KARMA_CONF_JS = 'karma.conf.js'
 
 

@@ -16,6 +16,7 @@ from calmjs.dev import cli
 
 from calmjs.testing.utils import mkdtemp
 from calmjs.testing.utils import stub_mod_call
+from calmjs.testing.utils import stub_stdouts
 
 # XXX static setup
 karma = cli.KarmaDriver.create()
@@ -131,8 +132,52 @@ class KarmaDriverRunTestCase(unittest.TestCase):
         toolchain = NullToolchain()
         self.driver.run(toolchain, spec)
         self.assertEqual(spec['karma_return_code'], 0)
+        self.assertIn('link', spec)
 
-    def test_standard_registry_test_success_run(self):
+    def test_standard_manual_tests_fail_run_abort(self):
+        stub_stdouts(self)
+        main = resource_filename('calmjs.dev', 'main.js')
+        test_fail = resource_filename('calmjs.dev.tests', 'test_fail.js')
+        spec = Spec(
+            # null toolchain does not prepare this
+            transpile_source_map={
+                'calmjs/dev/main': main,
+            },
+            test_module_paths=[
+                test_fail,
+            ],
+            # register abort
+            karma_abort_on_test_failure=True,
+        )
+        toolchain = NullToolchain()
+        with self.assertRaises(ToolchainAbort):
+            self.driver.run(toolchain, spec)
+        self.assertNotEqual(spec['karma_return_code'], 0)
+        # linked not done
+        self.assertNotIn('link', spec)
+
+    def test_standard_manual_tests_fail_run_continued(self):
+        stub_stdouts(self)
+        main = resource_filename('calmjs.dev', 'main.js')
+        test_fail = resource_filename('calmjs.dev.tests', 'test_fail.js')
+        spec = Spec(
+            # null toolchain does not prepare this
+            transpile_source_map={
+                'calmjs/dev/main': main,
+            },
+            test_module_paths=[
+                test_fail,
+            ],
+            # register abort
+            karma_abort_on_test_failure=False,
+        )
+        toolchain = NullToolchain()
+        self.driver.run(toolchain, spec)
+        self.assertNotEqual(spec['karma_return_code'], 0)
+        # linked continued
+        self.assertIn('link', spec)
+
+    def test_standard_registry_run(self):
         main = resource_filename('calmjs.dev', 'main.js')
         spec = Spec(
             source_package_names=['calmjs.dev'],
@@ -143,5 +188,5 @@ class KarmaDriverRunTestCase(unittest.TestCase):
             },
         )
         toolchain = NullToolchain()
+        # as no abort registered.
         self.driver.run(toolchain, spec)
-        self.assertEqual(spec['karma_return_code'], 0)

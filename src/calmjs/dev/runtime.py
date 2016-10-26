@@ -13,6 +13,7 @@ from calmjs.runtime import DriverRuntime
 from calmjs.runtime import Runtime
 
 from calmjs.dev.cli import KarmaDriver
+from calmjs.dev.karma import KARMA_ABORT_ON_TEST_FAILURE
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +58,12 @@ class KarmaRuntime(Runtime, DriverRuntime):
         super(KarmaRuntime, self).init_argparser(argparser)
 
         argparser.add_argument(
+            '-I', '--ignore-errors',
+            dest=KARMA_ABORT_ON_TEST_FAILURE, action='store_false',
+            help='do not abort execution on failure',
+        )
+
+        argparser.add_argument(
             '--test-registry', default=None,
             dest='test_registries', action=StoreDelimitedList,
             help='comma separated list of registries to use for gathering '
@@ -67,6 +74,8 @@ class KarmaRuntime(Runtime, DriverRuntime):
 
     def _run_runtime(self, runtime, **kwargs):
         spec = runtime.kwargs_to_spec(**kwargs)
+        spec[KARMA_ABORT_ON_TEST_FAILURE] = kwargs.get(
+            KARMA_ABORT_ON_TEST_FAILURE)
         toolchain = runtime.toolchain
         self.cli_driver.run(toolchain, spec)
         return spec

@@ -69,7 +69,8 @@ class RuntimeTestCase(unittest.TestCase):
         self.assertIn('--test-registry', stream.getvalue())
         self.assertIn('null', stream.getvalue())
 
-    def test_karma_runtime_integration(self):
+    def test_karma_runtime_integration_default_abort_on_error(self):
+        stub_stdouts(self)
         target = join(mkdtemp(self), 'target')
         build_dir = mkdtemp(self)
         stub_item_attr_value(
@@ -85,8 +86,32 @@ class RuntimeTestCase(unittest.TestCase):
         rt = KarmaRuntime(KarmaDriver.create(), working_set=working_set)
         result = rt(
             ['null', '--export-target', target, '--build-dir', build_dir])
+        self.assertFalse(result)
+        # defer this to the next test.
+        # self.assertIn('karma_config_path', result)
+        # self.assertTrue(exists(result['karma_config_path']))
+        # self.assertTrue(result.get('karma_abort_on_test_failure'))
+
+    def test_karma_runtime_integration_ignore_error(self):
+        target = join(mkdtemp(self), 'target')
+        build_dir = mkdtemp(self)
+        stub_item_attr_value(
+            self, mocks, 'dummy',
+            ToolchainRuntime(NullToolchain()),
+        )
+        make_dummy_dist(self, ((
+            'entry_points.txt',
+            '[calmjs.runtime]\n'
+            'null = calmjs.testing.mocks:dummy\n'
+        ),), 'example.package', '1.0')
+        working_set = pkg_resources.WorkingSet([self._calmjs_testing_tmpdir])
+        rt = KarmaRuntime(KarmaDriver.create(), working_set=working_set)
+        result = rt([
+            '-I', 'null', '--export-target', target, '--build-dir', build_dir,
+        ])
         self.assertIn('karma_config_path', result)
         self.assertTrue(exists(result['karma_config_path']))
+        self.assertFalse(result.get('karma_abort_on_test_failure'))
 
     def test_missing_runtime_arg(self):
         stub_stdouts(self)
@@ -101,9 +126,7 @@ class RuntimeTestCase(unittest.TestCase):
         ),), 'example.package', '1.0')
         working_set = pkg_resources.WorkingSet([self._calmjs_testing_tmpdir])
         rt = KarmaRuntime(KarmaDriver.create(), working_set=working_set)
-        with pretty_logging(
-                logger='calmjs.dev', stream=mocks.StringIO()) as log:
-            rt([])
+        rt([])
         # standard help printed
         self.assertIn('usage:', sys.stdout.getvalue())
         self.assertIn(

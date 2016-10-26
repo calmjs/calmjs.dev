@@ -8,10 +8,11 @@ from os.path import join
 from subprocess import call
 
 from calmjs.exc import AdviceAbort
+from calmjs.exc import ToolchainAbort
 
+from calmjs.toolchain import BEFORE_LINK
 from calmjs.toolchain import BEFORE_TEST
 from calmjs.toolchain import AFTER_TEST
-from calmjs.toolchain import AFTER_FINALIZE
 from calmjs.toolchain import BUILD_DIR
 
 from calmjs.toolchain import CALMJS_MODULE_REGISTRY_NAMES
@@ -52,7 +53,7 @@ class KarmaDriver(NodeDriver):
     def __init__(
             self,
             binary='karma', karma_conf_js=karma.KARMA_CONF_JS,
-            testrunner_advice_name=AFTER_FINALIZE,
+            testrunner_advice_name=BEFORE_LINK,
             *a, **kw):
         """
         Arguments
@@ -96,10 +97,15 @@ class KarmaDriver(NodeDriver):
         # colors don't work consistently... Node.js tools in a nutshell.
         # ... at least disable colours in the config file will also make
         # this option disabled.
-        spec['karma_return_code'] = call(
+        spec[karma.KARMA_RETURN_CODE] = call(
             [binary, 'start', config_fn, '--color'], **call_kw)
 
         spec.handle(karma.AFTER_KARMA)
+
+    def abort_on_test_failure(self, spec):
+        if spec.get(karma.KARMA_RETURN_CODE):
+            raise ToolchainAbort('karma exited with return code %s' % spec.get(
+                karma.KARMA_RETURN_CODE))
 
     def _create_config(self, spec, spec_keys):
         # Extract the available data stored in the spec.
@@ -146,9 +152,14 @@ class KarmaDriver(NodeDriver):
 
         spec[karma.KARMA_SPEC_KEYS] = utils.get_toolchain_targets_keys(
             toolchain, exclude_targets_from=())
-        spec.advise(self.testrunner_advice_name, self.test_spec, spec)
+        karma_advice_group = spec.get(
+            karma.KARMA_ADVICE_GROUP, self.testrunner_advice_name)
+        spec.advise(karma_advice_group, self.test_spec, spec)
         spec.advise(BEFORE_TEST, self.create_config, spec)
         spec.advise(karma.BEFORE_KARMA, self.write_config, spec)
+
+        if spec.get(karma.KARMA_ABORT_ON_TEST_FAILURE):
+            spec.advise(AFTER_TEST, self.abort_on_test_failure, spec)
 
     def run(self, toolchain, spec):
         """

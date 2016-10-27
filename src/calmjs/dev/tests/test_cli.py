@@ -3,7 +3,6 @@ import unittest
 import json
 from os.path import exists
 from os.path import join
-from pkg_resources import resource_filename
 
 from calmjs.cli import node
 from calmjs.cli import get_node_version
@@ -12,15 +11,13 @@ from calmjs.toolchain import NullToolchain
 from calmjs.toolchain import Spec
 from calmjs.toolchain import BEFORE_TEST
 from calmjs.toolchain import AFTER_TEST
+
 from calmjs.dev import cli
 
 from calmjs.testing.utils import mkdtemp
 from calmjs.testing.utils import stub_mod_call
-from calmjs.testing.utils import stub_stdouts
+from calmjs.testing.utils import stub_base_which
 
-# XXX static setup
-karma = cli.KarmaDriver.create()
-karma_version = karma.get_karma_version()
 node_version = get_node_version()
 
 
@@ -33,6 +30,7 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
 
     def test_base(self):
         stub_mod_call(self, cli)
+        stub_base_which(self)
         build_dir = mkdtemp(self)
         driver = cli.KarmaDriver.create()
         toolchain = NullToolchain()
@@ -50,6 +48,7 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
     @unittest.skipIf(node_version is None, 'node.js not found')
     def test_config_written_correctly(self):
         stub_mod_call(self, cli)
+        stub_base_which(self)
         build_dir = mkdtemp(self)
         driver = cli.KarmaDriver.create()
         toolchain = NullToolchain()
@@ -67,6 +66,7 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
         self.assertTrue(isinstance(result, dict))
 
     def test_advices(self):
+        stub_base_which(self)
         stub_mod_call(self, cli)
         build_dir = mkdtemp(self)
         advices = []
@@ -90,103 +90,5 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             driver.test_spec(spec)
         self.assertNotIn('karma_return_code', spec)
 
-
-# TODO figure out whether using a whatever version found is sane instead
-# of doing the manual setup.
-@unittest.skipIf(karma_version is None, 'karma binary not found')
-class KarmaDriverRunTestCase(unittest.TestCase):
-    """
-    Test on the actual run
-    """
-
-    def setUp(self):
-        self.driver = cli.KarmaDriver.create()
-
-    def test_version(self):
-        # formalizing as part of test.
-        version = self.driver.get_karma_version()
-        self.assertIsNot(version, None)
-
-    def test_empty_manual_run(self):
-        build_dir = mkdtemp(self)
-        toolchain = NullToolchain()
-        spec = Spec(build_dir=build_dir)
-        self.driver.setup_toolchain_spec(toolchain, spec)
-        self.driver.test_spec(spec)
-        # at least write that code.
-        # TODO figure out whether empty tests always return 1
-        self.assertIn('karma_return_code', spec)
-
-    def test_standard_manual_tests_success_run(self):
-        main = resource_filename('calmjs.dev', 'main.js')
-        test_main = resource_filename('calmjs.dev.tests', 'test_main.js')
-        spec = Spec(
-            # null toolchain does not prepare this
-            transpile_source_map={
-                'calmjs/dev/main': main,
-            },
-            test_module_paths=[
-                test_main,
-            ]
-        )
-        toolchain = NullToolchain()
-        self.driver.run(toolchain, spec)
-        self.assertEqual(spec['karma_return_code'], 0)
-        self.assertIn('link', spec)
-
-    def test_standard_manual_tests_fail_run_abort(self):
-        stub_stdouts(self)
-        main = resource_filename('calmjs.dev', 'main.js')
-        test_fail = resource_filename('calmjs.dev.tests', 'test_fail.js')
-        spec = Spec(
-            # null toolchain does not prepare this
-            transpile_source_map={
-                'calmjs/dev/main': main,
-            },
-            test_module_paths=[
-                test_fail,
-            ],
-            # register abort
-            karma_abort_on_test_failure=True,
-        )
-        toolchain = NullToolchain()
-        with self.assertRaises(ToolchainAbort):
-            self.driver.run(toolchain, spec)
-        self.assertNotEqual(spec['karma_return_code'], 0)
-        # linked not done
-        self.assertNotIn('link', spec)
-
-    def test_standard_manual_tests_fail_run_continued(self):
-        stub_stdouts(self)
-        main = resource_filename('calmjs.dev', 'main.js')
-        test_fail = resource_filename('calmjs.dev.tests', 'test_fail.js')
-        spec = Spec(
-            # null toolchain does not prepare this
-            transpile_source_map={
-                'calmjs/dev/main': main,
-            },
-            test_module_paths=[
-                test_fail,
-            ],
-            # register abort
-            karma_abort_on_test_failure=False,
-        )
-        toolchain = NullToolchain()
-        self.driver.run(toolchain, spec)
-        self.assertNotEqual(spec['karma_return_code'], 0)
-        # linked continued
-        self.assertIn('link', spec)
-
-    def test_standard_registry_run(self):
-        main = resource_filename('calmjs.dev', 'main.js')
-        spec = Spec(
-            source_package_names=['calmjs.dev'],
-            calmjs_module_registry_names=['calmjs.dev.module'],
-            # null toolchain does not prepare this
-            transpile_source_map={
-                'calmjs/dev/main': main,
-            },
-        )
-        toolchain = NullToolchain()
-        # as no abort registered.
-        self.driver.run(toolchain, spec)
+# rest of cli related tests have been streamlined into runtime for
+# setup and teardown optimisation.

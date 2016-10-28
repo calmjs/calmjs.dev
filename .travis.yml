@@ -62,6 +62,11 @@ install:
   # must be installed first, as this writes package_json into egg-info
   - pip install -e git+https://github.com/calmjs/calmjs.git@testing#egg=calmjs
   - python setup.py develop
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      calmjs npm --install calmjs.dev -D ;
+      rm -rf node_modules/karma-firefox-launcher
+      export CALMJS_TEST_ENV=. ;
+    fi
 script:
   - flake8 setup.py src
   - nosetests --with-coverage --cover-package=calmjs.dev --with-doctest

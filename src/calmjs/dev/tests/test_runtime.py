@@ -201,7 +201,7 @@ class CliRuntimeTestCase(unittest.TestCase):
         self.assertIn('null', stream.getvalue())
 
     def test_karma_runtime_integration_default_abort_on_error(self):
-        stub_stdouts(self)
+        # stub_stdouts(self)
         target = join(mkdtemp(self), 'target')
         build_dir = mkdtemp(self)
         stub_item_attr_value(
@@ -215,8 +215,9 @@ class CliRuntimeTestCase(unittest.TestCase):
         ),), 'example.package', '1.0')
         working_set = WorkingSet([self._calmjs_testing_tmpdir])
         rt = KarmaRuntime(self.driver, working_set=working_set)
-        result = rt(
-            ['null', '--export-target', target, '--build-dir', build_dir])
+        result = rt([
+            'null', '-vvd', '--export-target', target, '--build-dir',
+            build_dir])
         self.assertFalse(result)
         # defer this to the next test.
         # self.assertIn('karma_config_path', result)

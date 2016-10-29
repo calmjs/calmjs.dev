@@ -97,6 +97,7 @@ class KarmaDriver(NodeDriver):
         # colors don't work consistently... Node.js tools in a nutshell.
         # ... at least disable colours in the config file will also make
         # this option disabled.
+        logger.debug('karma call_kw: %s', call_kw)
         spec[karma.KARMA_RETURN_CODE] = call(
             [binary, 'start', config_fn, '--color'], **call_kw)
 

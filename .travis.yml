@@ -4,16 +4,9 @@ matrix:
     - language: node_js
       node_js: 6.9
       os: osx
-      env: TRAVIS_PYTHON_VERSION=3.5.2
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      brew update || brew update ;
-      brew install pyenv ;
-      brew outdated pyenv || brew upgrade pyenv ;
-      pyenv install $TRAVIS_PYTHON_VERSION ;
-      pyenv global $TRAVIS_PYTHON_VERSION ;
-      pyenv rehash ;
       python -m pip install --user virtualenv ;
       python -m virtualenv ~/.venv ;
       source ~/.venv/bin/activate ;
@@ -34,11 +27,7 @@ install:
   - python setup.py develop
 script:
   - flake8 setup.py src
-  - nosetests --with-coverage --cover-package=calmjs.dev --with-doctest
-  - coverage report -m
-# Alternatively without nose
-#  - coverage run --include=src/* -m unittest calmjs.dev.tests.make_suite
-#  - coverage report -m
+  - python -m unittest -v calmjs.dev.tests.make_suite
 after_success:
   # only submit coverage when testing under linux.
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then

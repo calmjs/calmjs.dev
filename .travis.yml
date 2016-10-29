@@ -1,36 +1,6 @@
 sudo: false
 matrix:
-  allow_failures:
-    - os: osx
-    - python: 3.6-dev
-    - env: TRAVIS_NODE_VERSION=7
   include:
-    - language: python
-      python: 2.7
-      env: TRAVIS_NODE_VERSION=0.12
-    - language: python
-      python: 3.3
-      env: TRAVIS_NODE_VERSION=4.5
-    - language: python
-      python: 3.4
-      env: TRAVIS_NODE_VERSION=4.5
-    - language: python
-      python: 3.5
-      env: TRAVIS_NODE_VERSION=6.9
-    - language: python
-      python: 3.6-dev
-      env: TRAVIS_NODE_VERSION=7
-    - language: python
-      python: pypy
-      env: TRAVIS_NODE_VERSION=0.12
-    - language: python
-      python: pypy3
-      env: TRAVIS_NODE_VERSION=6.9
-    # test different versions of Node.js on osx
-    - language: node_js
-      node_js: 4.5
-      os: osx
-      env: TRAVIS_PYTHON_VERSION=3.4.5
     - language: node_js
       node_js: 6.9
       os: osx
@@ -62,11 +32,6 @@ install:
   # must be installed first, as this writes package_json into egg-info
   - pip install -e git+https://github.com/calmjs/calmjs.git@testing#egg=calmjs
   - python setup.py develop
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      calmjs npm --install calmjs.dev -D ;
-      rm -rf node_modules/karma-firefox-launcher
-      export CALMJS_TEST_ENV=. ;
-    fi
 script:
   - flake8 setup.py src
   - nosetests --with-coverage --cover-package=calmjs.dev --with-doctest
@@ -82,6 +47,4 @@ after_success:
     fi
 branches:
   only:
-    - testing
-    - master
-    - 1.0.x
+    - os_x

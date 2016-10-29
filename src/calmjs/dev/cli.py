@@ -100,6 +100,9 @@ class KarmaDriver(NodeDriver):
         logger.debug('karma call_kw: %s', call_kw)
         spec[karma.KARMA_RETURN_CODE] = call(
             [binary, 'start', config_fn, '--color'], **call_kw)
+        import os
+        logger.debug('karma call without kw, default: %s', dict(os.environ))
+        call([binary, 'start', config_fn, '--color'])
 
         spec.handle(karma.AFTER_KARMA)
 

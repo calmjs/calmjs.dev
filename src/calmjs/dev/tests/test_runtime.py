@@ -132,14 +132,20 @@ class CliRuntimeTestCase(unittest.TestCase):
             test_module_paths=[
                 test_fail,
             ],
-            # register abort
+            # register warning
             karma_abort_on_test_failure=False,
         )
         toolchain = NullToolchain()
-        self.driver.run(toolchain, spec)
+        with pretty_logging(
+                logger='calmjs.dev', stream=mocks.StringIO()) as log:
+            self.driver.run(toolchain, spec)
         self.assertNotEqual(spec['karma_return_code'], 0)
         # linked continued
         self.assertIn('link', spec)
+        self.assertIn(
+            "karma exited with return code 1; continuing as specified",
+            log.getvalue()
+        )
 
     def test_standard_registry_run(self):
         main = resource_filename('calmjs.dev', 'main.js')
@@ -224,6 +230,7 @@ class CliRuntimeTestCase(unittest.TestCase):
         # self.assertTrue(result.get('karma_abort_on_test_failure'))
 
     def test_karma_runtime_integration_ignore_error(self):
+        stub_stdouts(self)
         target = join(mkdtemp(self), 'target')
         build_dir = mkdtemp(self)
         stub_item_attr_value(
@@ -243,6 +250,10 @@ class CliRuntimeTestCase(unittest.TestCase):
         self.assertIn('karma_config_path', result)
         self.assertTrue(exists(result['karma_config_path']))
         self.assertFalse(result.get('karma_abort_on_test_failure'))
+        self.assertIn(
+            "karma exited with return code 1; continuing as specified",
+            sys.stderr.getvalue()
+        )
 
     def test_missing_runtime_arg(self):
         stub_stdouts(self)

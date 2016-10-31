@@ -114,6 +114,13 @@ class KarmaDriver(NodeDriver):
             raise ToolchainAbort('karma exited with return code %s' % spec.get(
                 karma.KARMA_RETURN_CODE))
 
+    def warn_on_test_failure(self, spec):
+        if spec.get(karma.KARMA_RETURN_CODE):
+            logger.warning(
+                'karma exited with return code %s; continuing as specified',
+                spec.get(karma.KARMA_RETURN_CODE),
+            )
+
     def _create_config(self, spec, spec_keys):
         # Extract the available data stored in the spec.
         source_package_names = spec.get(SOURCE_PACKAGE_NAMES)
@@ -167,6 +174,8 @@ class KarmaDriver(NodeDriver):
 
         if spec.get(karma.KARMA_ABORT_ON_TEST_FAILURE):
             spec.advise(AFTER_TEST, self.abort_on_test_failure, spec)
+        else:
+            spec.advise(AFTER_TEST, self.warn_on_test_failure, spec)
 
     def run(self, toolchain, spec):
         """

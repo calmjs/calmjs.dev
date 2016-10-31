@@ -2,29 +2,30 @@ calmjs.dev
 ==========
 
 A package that declares common development tools that integrates with
-|calmjs|_ along with commonly used |nodejs|_ development frameworks.
-These declarations can then be invoked by packages that depend on this
-one to instantiate the actual environment with the declared frameworks
-installed.
+|calmjs|_ along with commonly used `Node.js`_ development frameworks.
 
 
 Introduction
 ------------
 
-To facilitate standardized deployment of working |nodejs|_ environments,
-and also for the execution of tests provided by Python packages against
-the JavaScript code that they might include, this package declares
-commonly used ``devDependencies`` in its ``package.json`` file which is
-declared through the ``calmjs`` extensions to |setuptools|_.  Other
-Python packages may then declare their dependencies through ``setup.py``
-to pick up and make use of the following set of tools through the
-appropriate entry points to ``calmjs`` and/or ``setuptools`` command.
+In order to facilitate a standardized deployment of working Node.js
+environments from within Python environments for the execution of
+JavaScript tests provided by Python packages against their accompanied
+JavaScript code, this package declares a set of commonly used
+development packages in the ``devDependencies`` section in its
+``package.json`` file which is declared through the ``calmjs``
+extensions to |setuptools|_.  Other Python packages may then declare
+their dependencies through ``setup.py`` to pick up and make use of the
+following set of tools through the appropriate entry points to
+``calmjs`` and/or ``setuptools`` command.
 
 .. |calmjs| replace:: ``calmjs``
-.. |nodejs| replace:: ``nodejs``
+.. |calmjs.dev| replace:: ``calmjs.dev``
+.. |calmjs.rjs| replace:: ``calmjs.rjs``
 .. |setuptools| replace:: ``setuptools``
 .. _calmjs: https://pypi.python.org/pypi/calmjs
-.. _nodejs: https://nodejs.org
+.. _calmjs.rjs: https://pypi.python.org/pypi/calmjs.rjs
+.. _Node.js: https://nodejs.org
 .. _setuptools: https://pypi.python.org/pypi/setuptools
 
 
@@ -49,15 +50,20 @@ Features
 
   Plus other integration packages that get them to work with each other,
   namely the various ``karma-*`` packages for integration with |karma|.
+  For full details on the environment that will be installed through the
+  |calmjs| framework, the command ``calmjs npm calmjs.dev`` can be
+  invoked to view the ``package.json`` once this package is installed
+  into a Python environment, or even install them into the current
+  working directory.
 
-- Through the use of ``calmjs.module`` registry, which exposes the
-  declared Python modules as providers of JavaScript modules, generate
-  the required configuration files for the supported JavaScript
-  development tools.  Details of the various implementation will be
-  specific to the software packages involved.
+- Through the use of the |calmjs| module registry system, Python
+  packages can declare JavaScript sources that can be passed through
+  specific toolchains that build them into deployable artifacts.  The
+  |calmjs.dev| package provide a common framework for the generation of
+  configuration files for the execution of tests through the karma test
+  runner.
 
-- A declared set of development dependencies.  This is reusable through
-  the |setuptools|_ extensions provided by |calmjs|_.
+  The usage of this is typically through the |calmjs| runtime system.
 
 .. |karma| replace:: ``karma``
 .. |mocha| replace:: ``mocha``
@@ -81,11 +87,59 @@ installation of development packages that have pulled this package in.
 Usage
 -----
 
+The default tool is meant to provide an injectable runtime that sits
+before a |calmjs| toolchain runtime.  Currently, the standard way to use
+this package is to use it in conjunction of the |calmjs.rjs|_ package
+runtime.  For instance, one might execute the ``r.js`` tool through
+|calmjs.rjs| like:
+
+.. code:: sh
+
+    $ calmjs rjs example.package
+
+The above command would package all the JavaScript code provided by the
+Python package ``example.package`` into an AMD bundle artifact through
+``r.js``.  As the ``example.package`` may also provide tests for its
+JavaScript code (naturally written in JavaScript), it may be executed
+through the karma test runner provided by this package.  The command is
+as simple as adding ``karma`` before the toolchain runtime, like:
+
+.. code:: sh
+
+    $ calmjs karma rjs example.package
+
+This would apply a test advice to the ``rjs`` toolchain and invoke it.
+Normally, before the bundling is done, the tests will be executed
+against the transpiled sources in the build directory.  Running of tests
+against existing or pre-generated artifacts is currently work in
+progress.
+
+
+Troubleshooting
+---------------
+
+The following may be some issues that may be encountered with standard
+or typical usage of |calmjs.dev|.
+
+ERROR [plugin]: "karma-..." plugin: ...
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A message specific to some plugin may result in the test runner not
+being able to execute any test.  This is typically caused by certain
+versions of karma test runner not being able to cleanly deal with
+misbehaving plugins that is available in the ``node_modules`` directory.
+If the plugin shown inside the quote (starting with ``karma-``) is
+unnecessary for the execution of tests, it should be removed and the
+test command should be executed again.
+
+
+Contribute
+----------
+
 - Issue Tracker: https://github.com/calmjs/calmjs.dev/issues
 - Source Code: https://github.com/calmjs/calmjs.dev
-
 
 License
 -------
 
-``calmjs.dev`` is licensed under the GPLv2 or later.
+|calmjs.dev| is licensed under the GPLv2 or later.

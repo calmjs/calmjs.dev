@@ -89,9 +89,9 @@ class CliRuntimeTestCase(unittest.TestCase):
             transpile_source_map={
                 'calmjs/dev/main': main,
             },
-            test_module_paths=[
-                test_main,
-            ]
+            test_module_paths_map={
+                'calmjs/test_main': test_main,
+            },
         )
         toolchain = NullToolchain()
         self.driver.run(toolchain, spec)
@@ -107,9 +107,9 @@ class CliRuntimeTestCase(unittest.TestCase):
             transpile_source_map={
                 'calmjs/dev/main': main,
             },
-            test_module_paths=[
-                test_fail,
-            ],
+            test_module_paths_map={
+                'calmjs/test_fail': test_fail,
+            },
             # register abort
             karma_abort_on_test_failure=True,
         )
@@ -129,9 +129,9 @@ class CliRuntimeTestCase(unittest.TestCase):
             transpile_source_map={
                 'calmjs/dev/main': main,
             },
-            test_module_paths=[
-                test_fail,
-            ],
+            test_module_paths_map={
+                'calmjs/test_fail': test_fail,
+            },
             # register warning
             karma_abort_on_test_failure=False,
         )

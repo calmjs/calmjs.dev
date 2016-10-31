@@ -18,7 +18,7 @@ from calmjs.toolchain import BUILD_DIR
 
 from calmjs.toolchain import CALMJS_MODULE_REGISTRY_NAMES
 from calmjs.toolchain import SOURCE_PACKAGE_NAMES
-from calmjs.toolchain import TEST_MODULE_PATHS
+from calmjs.toolchain import TEST_MODULE_PATHS_MAP
 
 from calmjs.cli import NodeDriver
 from calmjs.cli import get_bin_version
@@ -127,15 +127,15 @@ class KarmaDriver(NodeDriver):
         module_registries = spec.get(CALMJS_MODULE_REGISTRY_NAMES, [])
 
         # calculate, extract and persist the test module names
-        test_module_paths = spec[TEST_MODULE_PATHS] = spec.get(
-            TEST_MODULE_PATHS, [])
-        test_module_paths.extend(
+        test_module_paths_map = spec[TEST_MODULE_PATHS_MAP] = spec.get(
+            TEST_MODULE_PATHS_MAP, {})
+        test_module_paths_map.update(
             dist.get_module_default_test_registries_dependencies(
-                source_package_names, module_registries).values())
+                source_package_names, module_registries))
 
         config = karma.build_base_config()
         files = utils.get_targets_from_spec(spec, spec_keys)
-        config['files'] = list(files) + test_module_paths
+        config['files'] = list(files) + sorted(test_module_paths_map.values())
         return config
 
     def create_config(self, spec):

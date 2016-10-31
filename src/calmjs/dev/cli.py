@@ -97,7 +97,7 @@ class KarmaDriver(NodeDriver):
         # perhaps the provided spec can contain well-defined keywords
         # that can be passed to the `call` function (extend call_kw).
         # For now at least log this down like so.
-        binary = self.which()
+        binary = self.which() or self.which_with_node_modules()
         if binary is None:
             raise AdviceAbort('karma not found')
         # but actually run it with the '--color' flag, because otherwise

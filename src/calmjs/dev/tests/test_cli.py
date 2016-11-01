@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 import json
+from os.path import basename
 from os.path import exists
 from os.path import join
 
@@ -11,9 +12,11 @@ from calmjs.toolchain import NullToolchain
 from calmjs.toolchain import Spec
 from calmjs.toolchain import BEFORE_TEST
 from calmjs.toolchain import AFTER_TEST
+from calmjs.utils import pretty_logging
 
 from calmjs.dev import cli
 
+from calmjs.testing import mocks
 from calmjs.testing.utils import mkdtemp
 from calmjs.testing.utils import stub_mod_call
 from calmjs.testing.utils import stub_base_which
@@ -89,6 +92,72 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
         with self.assertRaises(ToolchainAbort):
             driver.test_spec(spec)
         self.assertNotIn('karma_return_code', spec)
+
+    def test_create_config_base(self):
+        spec = Spec()
+        driver = cli.KarmaDriver()
+        driver.create_config(spec)
+        self.assertEqual(spec['karma_config']['files'], [])
+
+    def test_create_config_source_specified_no_explicit_tests(self):
+        # this is usually provided by the toolchains themselves
+        spec = Spec(
+            source_package_names=['calmjs.dev'],
+            calmjs_module_registry_names=['calmjs.dev.module'],
+        )
+        driver = cli.KarmaDriver()
+        with pretty_logging(
+                logger='calmjs.dev', stream=mocks.StringIO()) as log:
+            driver.create_config(spec)
+
+        self.assertEqual(
+            sorted(basename(i) for i in spec['karma_config']['files']),
+            ['test_fail.js', 'test_main.js'],
+        )
+        self.assertIn(
+            "spec has no 'test_package_names' specified, "
+            "falling back to 'source_package_names'", log.getvalue(),
+        )
+        self.assertIn(
+            "spec has no 'calmjs_test_registry_names' specified, "
+            "falling back to 'calmjs_module_registry_names'", log.getvalue(),
+        )
+        self.assertIn(
+            "karma driver to extract tests from packages ['calmjs.dev'] "
+            "using registries ['calmjs.dev.module.tests'] for testing",
+            log.getvalue(),
+        )
+
+    def test_create_config_source_specified_explicit_specification(self):
+        # this is usually provided by the toolchains themselves
+        spec = Spec(
+            test_package_names=['calmjs.dev'],
+            calmjs_test_registry_names=['calmjs.dev.module.tests'],
+            source_package_names=['calmjs.dev'],
+            calmjs_module_registry_names=['calmjs.dev.module'],
+        )
+        driver = cli.KarmaDriver()
+        with pretty_logging(
+                logger='calmjs.dev', stream=mocks.StringIO()) as log:
+            driver.create_config(spec)
+
+        self.assertEqual(
+            sorted(basename(i) for i in spec['karma_config']['files']),
+            ['test_fail.js', 'test_main.js'],
+        )
+        self.assertIn(
+            "spec has 'test_package_names' explicitly specified",
+            log.getvalue(),
+        )
+        self.assertIn(
+            "spec has 'calmjs_test_registry_names' explicitly specified",
+            log.getvalue(),
+        )
+        self.assertIn(
+            "karma driver to extract tests from packages ['calmjs.dev'] "
+            "using registries ['calmjs.dev.module.tests'] for testing",
+            log.getvalue(),
+        )
 
 # rest of cli related tests have been streamlined into runtime for
 # setup and teardown optimisation.

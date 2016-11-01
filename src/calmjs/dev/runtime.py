@@ -6,14 +6,19 @@ select the resulting spec targets for usage
 """
 
 import logging
+from argparse import SUPPRESS
 
 from calmjs.argparse import StoreDelimitedList
+from calmjs.argparse import StorePathSepDelimitedList
+from calmjs.toolchain import CALMJS_TEST_REGISTRY_NAMES
+from calmjs.toolchain import TEST_PACKAGE_NAMES
 from calmjs.runtime import ToolchainRuntime
 from calmjs.runtime import DriverRuntime
 from calmjs.runtime import Runtime
 
 from calmjs.dev.cli import KarmaDriver
 from calmjs.dev.karma import KARMA_ABORT_ON_TEST_FAILURE
+from calmjs.dev.karma import SOURCE_ARTIFACTS
 
 logger = logging.getLogger(__name__)
 
@@ -65,17 +70,65 @@ class KarmaRuntime(Runtime, DriverRuntime):
 
         argparser.add_argument(
             '--test-registry', default=None,
-            dest='test_registries', action=StoreDelimitedList,
+            dest=CALMJS_TEST_REGISTRY_NAMES, action=StoreDelimitedList,
             help='comma separated list of registries to use for gathering '
-                 'JavaScript tests from the given Python packages; default '
-                 'behavior is to auto-select, enable verbose output to check '
-                 'to see which ones were selected',
+                 'JavaScript tests from the Python packages specified via the '
+                 'toolchain runtime; default behavior is to auto-select, '
+                 'enable verbose output to check to see which ones were '
+                 'selected',
         )
 
-    def _run_runtime(self, runtime, **kwargs):
+        argparser.add_argument(
+            '--test-registries', default=None,
+            dest=CALMJS_TEST_REGISTRY_NAMES, action=StoreDelimitedList,
+            help=SUPPRESS,
+        )
+
+        argparser.add_argument(
+            '--test-package', default=None,
+            dest=TEST_PACKAGE_NAMES, action=StoreDelimitedList,
+            help='comma separated list of registries to use for gathering '
+                 'JavaScript tests from the Python packages specified via the '
+                 'toolchain runtime; default behavior is to auto-select, '
+                 'enable verbose output to check to see which ones were '
+                 'selected',
+        )
+
+        argparser.add_argument(
+            '--test-packages', default=None,
+            dest=TEST_PACKAGE_NAMES, action=StoreDelimitedList,
+            help=SUPPRESS,
+        )
+
+        argparser.add_argument(
+            '--artifacts', default=None,
+            dest=SOURCE_ARTIFACTS, action=StorePathSepDelimitedList,
+            help=SUPPRESS,
+        )
+
+    def _update_spec_for_karma(self, spec, **kwargs):
+        post_process = [
+            KARMA_ABORT_ON_TEST_FAILURE,
+            CALMJS_TEST_REGISTRY_NAMES,
+            TEST_PACKAGE_NAMES,
+        ]
+        for key in post_process:
+            if kwargs.get(key) is None:
+                # pop them out from spec
+                spec.pop(key, None)
+            else:
+                spec[key] = kwargs.get(key)
+
+    def _prepare_spec_from_runtime(self, runtime, **kwargs):
         spec = runtime.kwargs_to_spec(**kwargs)
-        spec[KARMA_ABORT_ON_TEST_FAILURE] = kwargs.get(
-            KARMA_ABORT_ON_TEST_FAILURE)
+        # The above runtime specific method MAY strip off all keys that
+        # it doesn't understand; so for the critical keys that the karma
+        # runtime require/supply, plug them back in like so:
+        self._update_spec_for_karma(spec, **kwargs)
+        return spec
+
+    def _run_runtime(self, runtime, **kwargs):
+        spec = self._prepare_spec_from_runtime(runtime, **kwargs)
         toolchain = runtime.toolchain
         self.cli_driver.run(toolchain, spec)
         return spec

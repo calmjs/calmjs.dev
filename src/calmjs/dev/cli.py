@@ -17,7 +17,9 @@ from calmjs.toolchain import AFTER_TEST
 from calmjs.toolchain import BUILD_DIR
 
 from calmjs.toolchain import CALMJS_MODULE_REGISTRY_NAMES
+from calmjs.toolchain import CALMJS_TEST_REGISTRY_NAMES
 from calmjs.toolchain import SOURCE_PACKAGE_NAMES
+from calmjs.toolchain import TEST_PACKAGE_NAMES
 from calmjs.toolchain import TEST_MODULE_PATHS_MAP
 
 from calmjs.cli import NodeDriver
@@ -121,17 +123,44 @@ class KarmaDriver(NodeDriver):
                 spec.get(karma.KARMA_RETURN_CODE),
             )
 
-    def _create_config(self, spec, spec_keys):
+    def _pick_spec_keys(
+            self, spec, target, fallback,
+            fallback_callback=None, default=None):
         # Extract the available data stored in the spec.
-        source_package_names = spec.get(SOURCE_PACKAGE_NAMES)
-        module_registries = spec.get(CALMJS_MODULE_REGISTRY_NAMES, [])
+        if target in spec:
+            result = spec.get(target)
+            logger.debug("spec has '%s' explicitly specified", target)
+            return result
+        logger.debug(
+            "spec has no '%s' specified, falling back to '%s'",
+            target, fallback
+        )
+        result = spec.get(fallback, default)
+        if fallback_callback:
+            result = fallback_callback(result)
+        return result
+
+    def _create_config(self, spec, spec_keys):
+        package_names = self._pick_spec_keys(
+            spec, TEST_PACKAGE_NAMES, SOURCE_PACKAGE_NAMES, default=[])
+
+        module_registries = self._pick_spec_keys(
+            spec, CALMJS_TEST_REGISTRY_NAMES, CALMJS_MODULE_REGISTRY_NAMES,
+            fallback_callback=lambda x: list(
+                dist.map_registry_name_to_test(x)),
+            default=[]
+        )
+
+        logger.info(
+            "karma driver to extract tests from packages %r using "
+            "registries %r for testing", package_names, module_registries,
+        )
 
         # calculate, extract and persist the test module names
         test_module_paths_map = spec[TEST_MODULE_PATHS_MAP] = spec.get(
             TEST_MODULE_PATHS_MAP, {})
-        test_module_paths_map.update(
-            dist.get_module_default_test_registries_dependencies(
-                source_package_names, module_registries))
+        test_module_paths_map.update(dist.get_module_registries_dependencies(
+            package_names, module_registries))
 
         config = karma.build_base_config()
         files = utils.get_targets_from_spec(spec, spec_keys)
@@ -139,7 +168,7 @@ class KarmaDriver(NodeDriver):
         return config
 
     def create_config(self, spec):
-        spec_keys = spec[karma.KARMA_SPEC_KEYS]
+        spec_keys = spec.get(karma.KARMA_SPEC_KEYS, [])
         spec[karma.KARMA_CONFIG] = self._create_config(spec, spec_keys)
 
     def _write_config(self, spec):

@@ -22,9 +22,19 @@ def get_module_registries_dependencies(
     return result
 
 
+def map_registry_name_to_test(
+        registry_names, test_registry_name_suffix=TEST_REGISTRY_NAME_SUFFIX):
+    """
+    Map a given list of registry_names to its test equivalent.
+    """
+
+    for registry_name in registry_names:
+        yield registry_name + test_registry_name_suffix
+
+
 def get_module_default_test_registries_dependencies(
         pkg_names, registry_names,
-        test_module_name_suffix=TEST_REGISTRY_NAME_SUFFIX,
+        test_registry_name_suffix=TEST_REGISTRY_NAME_SUFFIX,
         working_set=None):
     """
     For the given registry names, compute the default test registries
@@ -33,8 +43,9 @@ def get_module_default_test_registries_dependencies(
     """
 
     result = {}
-    for registry_name in registry_names:
+    for registry_name in map_registry_name_to_test(
+            registry_names, test_registry_name_suffix):
         result.update(get_module_registry_dependencies(
-            pkg_names, registry_name + test_module_name_suffix))
+            pkg_names, registry_name))
 
     return result

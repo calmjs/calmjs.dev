@@ -31,6 +31,19 @@ from calmjs.testing.utils import stub_stdouts
 npm_version = get_npm_version()
 
 
+class BaseRuntimeTestCase(unittest.TestCase):
+
+    def test_update_spec_for_karma(self):
+        driver = KarmaDriver()
+        runtime = KarmaRuntime(driver)
+        spec = Spec(karma_abort_on_test_failure=1)
+        runtime._update_spec_for_karma(spec, test_package_names=[])
+        # values not provided via kwargs will be disappeared.
+        self.assertEqual(spec, {
+            'test_package_names': [],
+        })
+
+
 @unittest.skipIf(npm_version is None, 'npm not found.')
 class CliRuntimeTestCase(unittest.TestCase):
     """
@@ -252,6 +265,47 @@ class CliRuntimeTestCase(unittest.TestCase):
         self.assertFalse(result.get('karma_abort_on_test_failure'))
         self.assertIn(
             "karma exited with return code 1; continuing as specified",
+            sys.stderr.getvalue()
+        )
+
+    def test_karma_runtime_integration_explicit_arguments(self):
+        stub_stdouts(self)
+        target = join(mkdtemp(self), 'target')
+        build_dir = mkdtemp(self)
+        stub_item_attr_value(
+            self, mocks, 'dummy',
+            ToolchainRuntime(NullToolchain()),
+        )
+        make_dummy_dist(self, ((
+            'entry_points.txt',
+            '[calmjs.runtime]\n'
+            'null = calmjs.testing.mocks:dummy\n'
+        ),), 'example.package', '1.0')
+        working_set = WorkingSet([self._calmjs_testing_tmpdir])
+        rt = KarmaRuntime(self.driver, working_set=working_set)
+        result = rt([
+            '--test-registry', 'calmjs.no_such_registry',
+            '--test-package', 'no_such_pkg', '-vv',
+            '-I', 'null', '--export-target', target, '--build-dir', build_dir,
+        ])
+        self.assertIn('karma_config_path', result)
+        self.assertTrue(exists(result['karma_config_path']))
+        self.assertFalse(result.get('karma_abort_on_test_failure'))
+        self.assertIn(
+            "karma exited with return code 1; continuing as specified",
+            sys.stderr.getvalue()
+        )
+        self.assertIn(
+            "spec has 'test_package_names' explicitly specified",
+            sys.stderr.getvalue()
+        )
+        self.assertIn(
+            "spec has 'calmjs_test_registry_names' explicitly specified",
+            sys.stderr.getvalue()
+        )
+        self.assertIn(
+            "karma driver to extract tests from packages ['no_such_pkg'] "
+            "using registries ['calmjs.no_such_registry'] for testing",
             sys.stderr.getvalue()
         )
 

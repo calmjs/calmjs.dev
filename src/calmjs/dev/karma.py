@@ -6,12 +6,15 @@ Module that provides integration with karma.
 # spec keys
 AFTER_KARMA = 'after_karma'
 BEFORE_KARMA = 'before_karma'
+BEFORE_KARMA_ADVICE_LIST = 'before_karma_advice_list'
 KARMA_ABORT_ON_TEST_FAILURE = 'karma_abort_on_test_failure'
 KARMA_ADVICE_GROUP = 'karma_advice_group'
 KARMA_CONFIG = 'karma_config'
 KARMA_CONFIG_PATH = 'karma_config_path'
+KARMA_EXTRA_FRAMEWORKS = 'karma_extra_frameworks'
 KARMA_RETURN_CODE = 'karma_return_code'
 KARMA_SPEC_KEYS = 'karma_spec_keys'
+SOURCE_ARTIFACTS = 'source_artifacts'
 
 # templates
 

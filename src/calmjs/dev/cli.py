@@ -173,7 +173,22 @@ class KarmaDriver(NodeDriver):
 
     def _write_config(self, spec):
         # grab the config from the spec.
-        s = self.dumps(spec[karma.KARMA_CONFIG])
+        karma_config = spec.get(karma.KARMA_CONFIG)
+        if not isinstance(karma_config, dict):
+            logger.error(
+                "no valid '%s' in spec; cannot write '%s'",
+                karma.KARMA_CONFIG, self.karma_conf_js,
+            )
+            return
+
+        files = []
+        # prepend the file listing with the source artifacts.
+        for f in (spec.get(karma.SOURCE_ARTIFACTS), karma_config.get('files')):
+            if isinstance(f, (tuple, list)):
+                files.extend(f)
+        karma_config['files'] = files
+
+        s = self.dumps(karma_config)
         build_dir = spec[BUILD_DIR]
         config_fn = join(build_dir, self.karma_conf_js)
         with open(config_fn, 'w') as fd:

@@ -11,14 +11,19 @@ from pkg_resources import WorkingSet
 from calmjs.exc import ToolchainAbort
 from calmjs.npm import get_npm_version
 from calmjs.npm import Driver as NPMDriver
+from calmjs.registry import _inst as root_registry
 from calmjs.runtime import main
 from calmjs.runtime import ToolchainRuntime
+from calmjs.toolchain import AdviceRegistry
 from calmjs.toolchain import NullToolchain
 from calmjs.toolchain import Spec
+from calmjs.toolchain import CALMJS_TOOLCHAIN_ADVICE
 from calmjs.utils import pretty_logging
 
 from calmjs.dev.cli import KarmaDriver
+from calmjs.dev.toolchain import TestToolchain
 from calmjs.dev.runtime import KarmaRuntime
+from calmjs.dev.runtime import TestToolchainRuntime
 
 from calmjs.testing import mocks
 from calmjs.testing.utils import make_dummy_dist
@@ -29,6 +34,23 @@ from calmjs.testing.utils import stub_item_attr_value
 from calmjs.testing.utils import stub_stdouts
 
 npm_version = get_npm_version()
+
+
+class TestToolchainRuntimeTestCase(unittest.TestCase):
+
+    def test_kwargs_to_spec(self):
+        rt = TestToolchainRuntime(TestToolchain())
+        spec = rt.kwargs_to_spec()
+        self.assertTrue(isinstance(spec, Spec))
+
+    def test_kwargs_to_spec_artifacts(self):
+        fake = join(mkdtemp(self), 'fake.js')
+        rt = TestToolchainRuntime(TestToolchain())
+        with pretty_logging(
+                logger='calmjs.dev', stream=mocks.StringIO()) as log:
+            spec = rt.kwargs_to_spec(source_artifacts=[fake])
+        self.assertEqual(spec['source_artifacts'], [])
+        self.assertIn('does not exists', log.getvalue())
 
 
 class BaseRuntimeTestCase(unittest.TestCase):
@@ -333,3 +355,77 @@ class CliRuntimeTestCase(unittest.TestCase):
         with self.assertRaises(SystemExit):
             main(['karma', '-h'])
         self.assertIn('karma testrunner', sys.stdout.getvalue())
+
+    def test_karma_runtime_run_success_run(self):
+        stub_stdouts(self)
+
+        def cleanup():
+            root_registry.records.pop('calmjs.dev.module.tests', None)
+
+        self.addCleanup(cleanup)
+
+        build_dir = mkdtemp(self)
+        # manipulate the registry to remove the fail test
+        reg = root_registry.get('calmjs.dev.module.tests')
+        reg.records['calmjs.dev.tests'].pop('calmjs/dev/tests/test_fail', '')
+
+        # use the full blown runtime
+        rt = KarmaRuntime(self.driver)
+        # the artifact in our case is identical to the source file
+        artifact = resource_filename('calmjs.dev', 'main.js')
+        result = rt([
+            'run', '--artifact', artifact,
+            '--build-dir', build_dir,
+            '--test-registry', 'calmjs.dev.module.tests',
+            '--test-package', 'calmjs.dev',
+            '-vv',
+        ])
+        self.assertIn('karma_config_path', result)
+        self.assertTrue(exists(result['karma_config_path']))
+        # should exit cleanly
+        self.assertNotIn(
+            "karma exited with return code 1", sys.stderr.getvalue())
+        # should be clean of other error messages
+        self.assertNotIn("WARNING", sys.stderr.getvalue())
+        self.assertNotIn("ERROR", sys.stderr.getvalue())
+        self.assertNotIn("CRITICAL", sys.stderr.getvalue())
+        # plenty of info though
+        self.assertIn("INFO", sys.stderr.getvalue())
+
+    def test_karma_runtime_run_toolchain_package(self):
+        def cleanup():
+            root_registry.records.pop('calmjs.dev.module.tests', None)
+            root_registry.records.pop(CALMJS_TOOLCHAIN_ADVICE, None)
+
+        self.addCleanup(cleanup)
+        stub_stdouts(self)
+
+        make_dummy_dist(self, ((
+            'entry_points.txt',
+            '[calmjs.toolchain.advice]\n'
+            'calmjs.dev.toolchain:KarmaToolchain'
+            ' = calmjs.tests.test_toolchain:dummy\n'
+        ),), 'example.package', '1.0')
+        working_set = WorkingSet([self._calmjs_testing_tmpdir])
+
+        root_registry.records[
+            CALMJS_TOOLCHAIN_ADVICE] = AdviceRegistry(
+                CALMJS_TOOLCHAIN_ADVICE, _working_set=working_set)
+
+        # manipulate the registry to remove the fail test
+        reg = root_registry.get('calmjs.dev.module.tests')
+        reg.records['calmjs.dev.tests'].pop('calmjs/dev/tests/test_fail', '')
+
+        # use the full blown runtime
+        rt = KarmaRuntime(self.driver)
+        # the artifact in our case is identical to the source file
+        artifact = resource_filename('calmjs.dev', 'main.js')
+        result = rt([
+            'run', '--artifact', artifact,
+            '--test-registry', 'calmjs.dev.module.tests',
+            '--test-package', 'calmjs.dev',
+            '--toolchain-package', 'example.package',
+        ])
+        self.assertIn('karma_config_path', result)
+        # the spec key is written.
+        self.assertEqual(result['dummy'], ['dummy'])

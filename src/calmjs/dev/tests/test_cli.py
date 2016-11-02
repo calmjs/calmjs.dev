@@ -159,5 +159,55 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             log.getvalue(),
         )
 
+    def test_write_config_not_enough_info(self):
+        build_dir = mkdtemp(self)
+        spec = Spec(build_dir=build_dir)
+        driver = cli.KarmaDriver()
+        with pretty_logging(
+                logger='calmjs.dev', stream=mocks.StringIO()) as log:
+            driver.write_config(spec)
+        self.assertIn(
+            "no valid 'karma_config' in spec; cannot write 'karma.conf.js'",
+            log.getvalue(),
+        )
+        self.assertFalse(exists(join(build_dir, 'karma.conf.js')))
+
+    def test_write_config_base(self):
+        build_dir = mkdtemp(self)
+        spec = Spec(build_dir=build_dir, karma_config={})
+        driver = cli.KarmaDriver()
+        driver.write_config(spec)
+        self.assertTrue(exists(join(build_dir, 'karma.conf.js')))
+
+    def test_write_config_invalid_files(self):
+        build_dir = mkdtemp(self)
+        driver = cli.KarmaDriver()
+        spec = Spec(build_dir=build_dir, karma_config={'files': None})
+        driver.write_config(spec)
+        self.assertTrue(exists(join(build_dir, 'karma.conf.js')))
+
+    def test_write_config_invalid_source_artifacts(self):
+        build_dir = mkdtemp(self)
+        driver = cli.KarmaDriver()
+        spec = Spec(
+            build_dir=build_dir, karma_config={'files': []},
+            source_artifacts=None,
+        )
+        driver.write_config(spec)
+        self.assertTrue(exists(join(build_dir, 'karma.conf.js')))
+
+    def test_write_config_valid_files_source_artifacts(self):
+        build_dir = mkdtemp(self)
+        driver = cli.KarmaDriver()
+        spec = Spec(
+            build_dir=build_dir, karma_config={'files': ['test/file']},
+            source_artifacts=['test/artifact'],
+        )
+        driver.write_config(spec)
+        with open(join(build_dir, 'karma.conf.js')) as fd:
+            conf = fd.read()
+        self.assertIn('test/file', conf)
+        self.assertIn('test/artifact', conf)
+
 # rest of cli related tests have been streamlined into runtime for
 # setup and teardown optimisation.

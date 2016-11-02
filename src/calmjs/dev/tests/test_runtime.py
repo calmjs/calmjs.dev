@@ -48,8 +48,8 @@ class TestToolchainRuntimeTestCase(unittest.TestCase):
         rt = TestToolchainRuntime(TestToolchain())
         with pretty_logging(
                 logger='calmjs.dev', stream=mocks.StringIO()) as log:
-            spec = rt.kwargs_to_spec(source_artifacts=[fake])
-        self.assertEqual(spec['source_artifacts'], [])
+            spec = rt.kwargs_to_spec(artifact_paths=[fake])
+        self.assertEqual(spec['artifact_paths'], [])
         self.assertIn('does not exists', log.getvalue())
 
 

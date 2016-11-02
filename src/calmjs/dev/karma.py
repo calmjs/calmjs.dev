@@ -14,7 +14,6 @@ KARMA_CONFIG_PATH = 'karma_config_path'
 KARMA_EXTRA_FRAMEWORKS = 'karma_extra_frameworks'
 KARMA_RETURN_CODE = 'karma_return_code'
 KARMA_SPEC_KEYS = 'karma_spec_keys'
-SOURCE_ARTIFACTS = 'source_artifacts'
 
 # templates
 

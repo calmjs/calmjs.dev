@@ -16,6 +16,7 @@ from calmjs.toolchain import BEFORE_TEST
 from calmjs.toolchain import AFTER_TEST
 from calmjs.toolchain import BUILD_DIR
 
+from calmjs.toolchain import ARTIFACT_PATHS
 from calmjs.toolchain import CALMJS_MODULE_REGISTRY_NAMES
 from calmjs.toolchain import CALMJS_TEST_REGISTRY_NAMES
 from calmjs.toolchain import SOURCE_PACKAGE_NAMES
@@ -183,7 +184,7 @@ class KarmaDriver(NodeDriver):
 
         files = []
         # prepend the file listing with the source artifacts.
-        for f in (spec.get(karma.SOURCE_ARTIFACTS), karma_config.get('files')):
+        for f in (spec.get(ARTIFACT_PATHS), karma_config.get('files')):
             if isinstance(f, (tuple, list)):
                 files.extend(f)
         karma_config['files'] = files

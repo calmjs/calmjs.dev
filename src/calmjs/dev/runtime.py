@@ -19,6 +19,7 @@ from calmjs.argparse import StoreDelimitedList
 from calmjs.argparse import StorePathSepDelimitedList
 from calmjs.argparse import StoreRequirementList
 from calmjs.toolchain import ADVICE_PACKAGES
+from calmjs.toolchain import ARTIFACT_PATHS
 from calmjs.toolchain import CALMJS_TEST_REGISTRY_NAMES
 from calmjs.toolchain import TEST_PACKAGE_NAMES
 from calmjs.runtime import ToolchainRuntime
@@ -30,7 +31,6 @@ from calmjs.dev.toolchain import KarmaToolchain
 from calmjs.dev.karma import BEFORE_KARMA_ADVICE_LIST
 from calmjs.dev.karma import KARMA_ABORT_ON_TEST_FAILURE
 from calmjs.dev.karma import KARMA_EXTRA_FRAMEWORKS
-from calmjs.dev.karma import SOURCE_ARTIFACTS
 
 logger = logging.getLogger(__name__)
 
@@ -112,14 +112,14 @@ class TestToolchainRuntime(ToolchainRuntime):
 
         argparser.add_argument(
             '--artifact', default=None,
-            dest=SOURCE_ARTIFACTS, action=StorePathSepDelimitedList,
+            dest=ARTIFACT_PATHS, action=StorePathSepDelimitedList,
             help="a list of artifact files to test, separated by the '%s' "
                  "character" % pathsep,
         )
 
         argparser.add_argument(
             '--artifacts', default=None,
-            dest=SOURCE_ARTIFACTS, action=StorePathSepDelimitedList,
+            dest=ARTIFACT_PATHS, action=StorePathSepDelimitedList,
             help=SUPPRESS,
         )
 
@@ -173,9 +173,10 @@ class TestToolchainRuntime(ToolchainRuntime):
 
         spec = super(TestToolchainRuntime, self).kwargs_to_spec(**kwargs)
         # do not sort this list, it is provided with a specific order
-        if spec.get(SOURCE_ARTIFACTS):
-            spec[SOURCE_ARTIFACTS] = list(
-                checkpaths(spec.get(SOURCE_ARTIFACTS)))
+        if spec.get(ARTIFACT_PATHS):
+            # do this to conform to usage for artifact_paths in spec.
+            spec[ARTIFACT_PATHS] = list(
+                checkpaths(spec.get(ARTIFACT_PATHS)))
         return spec
 
 

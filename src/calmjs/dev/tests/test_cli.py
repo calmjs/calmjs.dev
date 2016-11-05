@@ -203,7 +203,13 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             transpiled_targets={
                 'calmjs/dev/main': 'calmjs/dev/main.js',
             },
-            karma_spec_keys=['bundled_targets', 'transpiled_targets'],
+            # for testing the filtering
+            css_targets={
+                'calmjs/dev/main': 'calmjs/dev/main.css',
+            },
+            karma_spec_keys=[
+                'bundled_targets', 'transpiled_targets', 'css_targets',
+            ],
             coverage_enable=True,
             cover_bundle=True,
             cover_test=True,
@@ -219,6 +225,8 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
         self.assertIn('calmjs/dev/main.js', spec['karma_config']['files'])
         self.assertIn(
             'calmjs/dev/main.js', spec['karma_config']['preprocessors'])
+        self.assertNotIn(
+            'calmjs/dev/main.css', spec['karma_config']['preprocessors'])
         self.assertEqual(spec['karma_config']['coverageReporter'], {
             'type': 'lcov',
             'dir': realpath('coverage'),

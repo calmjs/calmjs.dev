@@ -156,7 +156,8 @@ class KarmaDriver(NodeDriver):
             return
 
         # for the preprocessors key
-        preprocessors = {path: 'coverage' for path in files}
+        preprocessors = {
+            path: 'coverage' for path in files if path.endswith('.js')}
 
         if not spec.get(COVER_BUNDLE):
             # remove all the bundled sources

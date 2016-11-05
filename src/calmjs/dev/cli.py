@@ -6,6 +6,7 @@ This module provides interface to the karma cli runtime.
 import logging
 import os
 from os.path import join
+from os.path import realpath
 from subprocess import call
 
 from calmjs.exc import AdviceAbort
@@ -29,6 +30,15 @@ from calmjs.cli import get_bin_version
 from calmjs.dev import dist
 from calmjs.dev import karma
 from calmjs.dev import utils
+
+from calmjs.dev.toolchain import COVERAGE_ENABLE
+from calmjs.dev.toolchain import COVERAGE_DIR
+from calmjs.dev.toolchain import COVERAGE_TYPE
+from calmjs.dev.toolchain import COVER_BUNDLE
+from calmjs.dev.toolchain import COVER_TEST
+
+from calmjs.dev.toolchain import COVERAGE_DIR_DEFAULT
+from calmjs.dev.toolchain import COVERAGE_TYPE_DEFAULT
 
 logger = logging.getLogger(__name__)
 
@@ -141,6 +151,34 @@ class KarmaDriver(NodeDriver):
             result = fallback_callback(result)
         return result
 
+    def _apply_coverage_config(self, spec, config, files, test_module_paths):
+        if not spec.get(COVERAGE_ENABLE):
+            return
+
+        # for the preprocessors key
+        preprocessors = {path: 'coverage' for path in files}
+
+        if not spec.get(COVER_BUNDLE):
+            # remove all the bundled sources
+            for path in spec.get('bundled_targets', {}).values():
+                preprocessors.pop(path, None)
+
+        if spec.get(COVER_TEST):
+            preprocessors.update({
+                path: 'coverage' for path in test_module_paths
+            })
+
+        # for the coverageReporter key
+        coverage_reporter = {
+            'type': spec.get(COVERAGE_TYPE, COVERAGE_TYPE_DEFAULT),
+            'dir': realpath(spec.get(COVERAGE_DIR, COVERAGE_DIR_DEFAULT)),
+        }
+
+        # finally, modify the config
+        config['reporters'] = list(config['reporters']) + ['coverage']
+        config['preprocessors'] = preprocessors
+        config['coverageReporter'] = coverage_reporter
+
     def _create_config(self, spec, spec_keys):
         package_names = self._pick_spec_keys(
             spec, TEST_PACKAGE_NAMES, SOURCE_PACKAGE_NAMES, default=[])
@@ -164,8 +202,11 @@ class KarmaDriver(NodeDriver):
             package_names, module_registries))
 
         config = karma.build_base_config()
-        files = utils.get_targets_from_spec(spec, spec_keys)
-        config['files'] = list(files) + sorted(test_module_paths_map.values())
+        files = list(utils.get_targets_from_spec(spec, spec_keys))
+        test_module_paths = sorted(test_module_paths_map.values())
+
+        config['files'] = files + test_module_paths
+        self._apply_coverage_config(spec, config, files, test_module_paths)
         return config
 
     def create_config(self, spec):

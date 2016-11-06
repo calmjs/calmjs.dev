@@ -484,3 +484,62 @@ class CliRuntimeTestCase(unittest.TestCase):
         self.assertIn('karma_config_path', result)
         # the spec key is written.
         self.assertEqual(result['dummy'], ['dummy'])
+
+    def test_karma_runtime_run_toolchain_auto_test_registry(self):
+        def cleanup():
+            root_registry.records.pop('calmjs.dev.module.tests', None)
+            root_registry.records.pop(CALMJS_TOOLCHAIN_ADVICE, None)
+
+        self.addCleanup(cleanup)
+        stub_stdouts(self)
+
+        make_dummy_dist(self, ((
+            'entry_points.txt',
+            '[calmjs.toolchain.advice]\n'
+            'calmjs.dev.toolchain:KarmaToolchain'
+            ' = calmjs.tests.test_toolchain:dummy\n'
+        ),), 'example.package', '1.0')
+
+        # in the main distribution we did not define this to avoid
+        # potential contamination of test data by this package with the
+        # rest of the framework, so we stub that function
+
+        _called = []
+
+        def fake_get_module_registry_names(package_names):
+            _called.extend(package_names)
+            return ['calmjs.dev.module']
+
+        from calmjs.dev import toolchain
+        stub_item_attr_value(
+            self, toolchain, 'get_module_registry_names',
+            fake_get_module_registry_names
+        )
+
+        working_set = WorkingSet([self._calmjs_testing_tmpdir])
+
+        root_registry.records[
+            CALMJS_TOOLCHAIN_ADVICE] = AdviceRegistry(
+                CALMJS_TOOLCHAIN_ADVICE, _working_set=working_set)
+
+        # manipulate the registry to remove the fail test
+        reg = root_registry.get('calmjs.dev.module.tests')
+        reg.records['calmjs.dev.tests'].pop('calmjs/dev/tests/test_fail', '')
+
+        # use the full blown runtime
+        rt = KarmaRuntime(self.driver)
+        # the artifact in our case is identical to the source file
+        artifact = resource_filename('calmjs.dev', 'main.js')
+        result = rt([
+            'run', '--artifact', artifact,
+            '--test-package', 'calmjs.dev',
+            '--toolchain-package', 'example.package',
+        ])
+        self.assertIn('calmjs.dev', _called)
+        self.assertIn('karma_config_path', result)
+        # the spec key is written.
+        self.assertEqual(result['dummy'], ['dummy'])
+        self.assertEqual(
+            result['calmjs_module_registry_names'], ['calmjs.dev.module'])
+        self.assertIn(
+            'calmjs/dev/tests/test_main', result['test_module_paths_map'])

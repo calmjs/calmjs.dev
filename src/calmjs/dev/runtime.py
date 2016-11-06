@@ -28,6 +28,11 @@ from calmjs.runtime import Runtime
 
 from calmjs.dev.cli import KarmaDriver
 from calmjs.dev.toolchain import KarmaToolchain
+from calmjs.dev.toolchain import COVERAGE_ENABLE
+from calmjs.dev.toolchain import COVERAGE_DIR
+from calmjs.dev.toolchain import COVERAGE_TYPE
+from calmjs.dev.toolchain import COVER_BUNDLE
+from calmjs.dev.toolchain import COVER_TEST
 from calmjs.dev.karma import BEFORE_KARMA_ADVICE_LIST
 from calmjs.dev.karma import KARMA_ABORT_ON_TEST_FAILURE
 from calmjs.dev.karma import KARMA_EXTRA_FRAMEWORKS
@@ -224,6 +229,41 @@ class KarmaRuntime(Runtime, DriverRuntime):
         super(KarmaRuntime, self).init_argparser(argparser)
 
         argparser.add_argument(
+            '-c', '--coverage',
+            dest=COVERAGE_ENABLE, action='store_true',
+            help='enable coverage report',
+        )
+
+        argparser.add_argument(
+            '--coverage-dir',
+            dest=COVERAGE_DIR, action='store', default='coverage',
+            help="location to store the coverage report; "
+                 "defaults to 'coverage'",
+        )
+
+        argparser.add_argument(
+            '--coverage-type',
+            dest=COVERAGE_TYPE, default='lcov',
+            choices=[
+                'html', 'lcov', 'lcovonly', 'text', 'text-summary',
+            ],
+            help="the type of coverage report to generate; "
+                 "defaults to 'lcov'",
+        )
+
+        argparser.add_argument(
+            '--cover-bundle',
+            dest=COVER_BUNDLE, action='store_true',
+            help="include bundled sources for coverage report",
+        )
+
+        argparser.add_argument(
+            '--cover-test',
+            dest=COVER_TEST, action='store_true',
+            help="include test sources for coverage report",
+        )
+
+        argparser.add_argument(
             '-I', '--ignore-errors',
             dest=KARMA_ABORT_ON_TEST_FAILURE, action='store_false',
             help='do not abort execution on failure',
@@ -236,6 +276,11 @@ class KarmaRuntime(Runtime, DriverRuntime):
             KARMA_ABORT_ON_TEST_FAILURE,
             CALMJS_TEST_REGISTRY_NAMES,
             TEST_PACKAGE_NAMES,
+            COVERAGE_ENABLE,
+            COVERAGE_DIR,
+            COVERAGE_TYPE,
+            COVER_BUNDLE,
+            COVER_TEST,
         ]
         for key in post_process:
             if kwargs.get(key) is None:

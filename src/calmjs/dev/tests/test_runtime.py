@@ -290,6 +290,61 @@ class CliRuntimeTestCase(unittest.TestCase):
             sys.stderr.getvalue()
         )
 
+        # ensure coverage isn't run at all.
+        coverage_dir = join(build_dir, 'coverage')
+        self.assertFalse(exists(coverage_dir))
+
+    def test_karma_runtime_integration_coverage(self):
+
+        class DummyToolchain(NullToolchain):
+            """
+            Need this step to prepare some actual sources from this
+            project, and we are cheating a bit due to the lack of actual
+            registry setup.
+            """
+
+            def prepare(self, spec):
+                # manually set up the source and the tests.
+                main = resource_filename(
+                    'calmjs.dev', 'main.js')
+                test_main = resource_filename(
+                    'calmjs.dev.tests', 'test_main.js')
+                spec.update(dict(
+                    transpile_source_map={
+                        'calmjs/dev/main': main,
+                    },
+                    test_module_paths_map={
+                        'calmjs/test_main': test_main,
+                    },
+                ))
+
+        stub_stdouts(self)
+        target = join(mkdtemp(self), 'target')
+        build_dir = mkdtemp(self)
+        coverage_dir = join(build_dir, 'coverage')
+        # ensure this does not already exist
+        self.assertFalse(exists(coverage_dir))
+
+        stub_item_attr_value(
+            self, mocks, 'dummy',
+            ToolchainRuntime(DummyToolchain()),
+        )
+        make_dummy_dist(self, ((
+            'entry_points.txt',
+            '[calmjs.runtime]\n'
+            'null = calmjs.testing.mocks:dummy\n'
+        ),), 'example.package', '1.0')
+        working_set = WorkingSet([self._calmjs_testing_tmpdir])
+        rt = KarmaRuntime(self.driver, working_set=working_set)
+        result = rt([
+            '--coverage', '--coverage-dir', coverage_dir,
+            'null', '--export-target', target, '--build-dir', build_dir,
+        ])
+
+        # ensure coverage report created
+        self.assertTrue(result['coverage_enable'])
+        self.assertTrue(exists(coverage_dir))
+
     def test_karma_runtime_integration_explicit_arguments(self):
         stub_stdouts(self)
         target = join(mkdtemp(self), 'target')

@@ -83,6 +83,37 @@ and run ``python setup.py develop`` within a working Python environment,
 or follow the local framework or operating system's default method on
 installation of development packages that have pulled this package in.
 
+Installation of Node.js external dependencies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As this package integrates a number of Node.js packages to achieve the
+intended functionality of integration with that environment, Node.js
+packages required by this package can be installed into the current
+working directory through the |calmjs| executable with the included
+|npm| command:
+
+.. code:: sh
+
+    $ calmjs npm --install calmjs.dev
+
+Testing the installation
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Finally, to verify for the successful installation of |calmjs.dev|, the
+included tests may be executed through this command:
+
+.. code:: sh
+
+    $ python -m unittest calmjs.dev.tests.make_suite
+
+However, if the steps to install external Node.js dependencies to the
+current directory was followed, the current directory may be specified
+as the ``CALMJS_TEST_ENV`` environment variable.  Under POSIX compatible
+shells this may be executed instead from within that directory:
+
+.. code:: sh
+
+    $ CALMJS_TEST_ENV=. python -m unittest calmjs.dev.tests.make_suite
 
 Usage
 -----
@@ -110,9 +141,38 @@ as simple as adding ``karma`` before the toolchain runtime, like:
 
 This would apply a test advice to the ``rjs`` toolchain and invoke it.
 Normally, before the bundling is done, the tests will be executed
-against the transpiled sources in the build directory.  Running of tests
-against existing or pre-generated artifacts is currently work in
-progress.
+against the transpiled sources in the build directory.
+
+To run tests against pre-generated artifact files, |calmjs.dev| provides
+a surrogate toolchain runtime specific for the ``karma`` command that
+may be used to achieve this purpose.  For example, if one wishes to run
+tests a bundle file ``bundle.js`` which they assumed to contain code
+from ``example.package``, they may wish to run tests defined for that
+package by invoking:
+
+.. code:: sh
+
+    $ calmjs karma run \
+        --artifact=bundle.js \
+        --test-package=example.package
+
+However, for more complicated toolchains and packages this will probably
+not work, as the generation of these artifacts typically involve extra
+optional advices that have been added.  To address that, one may apply
+the ``--toolchain-package`` flag which serves a similar purpose as the
+``--optional-advice`` flag for certain toolchains.  For |calmjs.rjs|,
+this is necessary.  The full command may be like so:
+
+.. code:: sh
+
+    $ calmjs karma run \
+        --artifact=bundle.js \
+        --test-package=example.package \
+        --toolchain-package=calmjs.rjs
+
+As with all |calmjs| tools, more help can be acquired by appending
+``-h`` or ``--help`` to each of the runtime commands, i.e. ``calmjs
+karma -h`` or ``calmjs karma run -h``.
 
 
 Troubleshooting

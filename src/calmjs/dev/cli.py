@@ -5,6 +5,7 @@ This module provides interface to the karma cli runtime.
 
 import logging
 import os
+import re
 from os.path import join
 from os.path import realpath
 from subprocess import call
@@ -151,6 +152,9 @@ class KarmaDriver(NodeDriver):
             result = fallback_callback(result)
         return result
 
+    def _valid_cover_file(self, path):
+        return path.endswith('js') and not re.search('__\w*__', path)
+
     def _apply_coverage_config(self, spec, config, files, test_module_paths):
         if not spec.get(COVERAGE_ENABLE):
             return
@@ -176,7 +180,7 @@ class KarmaDriver(NodeDriver):
         # finally, modify the config
         config['reporters'] = list(config['reporters']) + ['coverage']
         config['preprocessors'] = {
-            path: 'coverage' for path in paths if path.endswith('.js')}
+            path: 'coverage' for path in paths if self._valid_cover_file(path)}
         config['coverageReporter'] = coverage_reporter
 
     def _create_config(self, spec, spec_keys):

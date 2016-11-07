@@ -202,6 +202,7 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             # provide the other bits that normally get set up earlier.
             transpiled_targets={
                 'calmjs/dev/main': 'calmjs/dev/main.js',
+                'calmjs/dev/__main__': 'calmjs/dev/__main__.js',
             },
             # for testing the filtering
             css_targets={
@@ -227,6 +228,8 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             'calmjs/dev/main.js', spec['karma_config']['preprocessors'])
         self.assertNotIn(
             'calmjs/dev/main.css', spec['karma_config']['preprocessors'])
+        self.assertNotIn(
+            'calmjs/dev/__main__.js', spec['karma_config']['preprocessors'])
         self.assertEqual(spec['karma_config']['coverageReporter'], {
             'type': 'lcov',
             'dir': realpath('coverage'),

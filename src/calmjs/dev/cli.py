@@ -156,18 +156,16 @@ class KarmaDriver(NodeDriver):
             return
 
         # for the preprocessors key
-        preprocessors = {
-            path: 'coverage' for path in files if path.endswith('.js')}
+        paths = set(files)
 
         if not spec.get(COVER_BUNDLE):
             # remove all the bundled sources
             for path in spec.get('bundled_targets', {}).values():
-                preprocessors.pop(path, None)
+                paths.discard(path)
 
         if spec.get(COVER_TEST):
-            preprocessors.update({
-                path: 'coverage' for path in test_module_paths
-            })
+            for path in test_module_paths:
+                paths.add(path)
 
         # for the coverageReporter key
         coverage_reporter = {
@@ -177,7 +175,8 @@ class KarmaDriver(NodeDriver):
 
         # finally, modify the config
         config['reporters'] = list(config['reporters']) + ['coverage']
-        config['preprocessors'] = preprocessors
+        config['preprocessors'] = {
+            path: 'coverage' for path in paths if path.endswith('.js')}
         config['coverageReporter'] = coverage_reporter
 
     def _create_config(self, spec, spec_keys):

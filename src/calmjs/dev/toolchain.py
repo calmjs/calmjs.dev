@@ -19,7 +19,7 @@ COVER_REPORT_FILE = 'cover_report_file'
 COVER_TEST = 'cover_test'
 
 # values for some of the above keys
-COVERAGE_TYPE_DEFAULT = 'lcov'
+COVERAGE_TYPE_DEFAULT = 'default'
 COVER_REPORT_DIR_DEFAULT = 'coverage'
 
 

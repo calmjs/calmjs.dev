@@ -187,6 +187,41 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
         self.assertIn('calmjs/dev/main.js', spec['karma_config']['files'])
         self.assertIn(
             'calmjs/dev/main.js', spec['karma_config']['preprocessors'])
+        self.assertEqual(
+            spec['karma_config']['coverageReporter']['dir'],
+            realpath('coverage'),
+        )
+        # default specifies three different reporters.
+        self.assertEqual(
+            len(spec['karma_config']['coverageReporter']['reporters']), 3)
+
+    def test_create_config_with_coverage_standard_specified(self):
+        # this is usually provided by the toolchains themselves
+        spec = Spec(
+            test_package_names=['calmjs.dev'],
+            source_package_names=['calmjs.dev'],
+            calmjs_test_registry_names=['calmjs.dev.module.tests'],
+            calmjs_module_registry_names=['calmjs.dev.module'],
+            bundled_targets={'jquery': 'jquery.js'},
+            # provide the other bits that normally get set up earlier.
+            transpiled_targets={
+                'calmjs/dev/main': 'calmjs/dev/main.js',
+            },
+            karma_spec_keys=['bundled_targets', 'transpiled_targets'],
+            coverage_enable=True,
+            coverage_type='lcov',
+        )
+        driver = cli.KarmaDriver()
+        driver.create_config(spec)
+
+        self.assertIn('coverage', spec['karma_config']['reporters'])
+        self.assertNotIn('test_fail.js', [
+            basename(k) for k in spec['karma_config']['preprocessors']
+        ])
+        self.assertNotIn('jquery.js', spec['karma_config']['preprocessors'])
+        self.assertIn('calmjs/dev/main.js', spec['karma_config']['files'])
+        self.assertIn(
+            'calmjs/dev/main.js', spec['karma_config']['preprocessors'])
         self.assertEqual(spec['karma_config']['coverageReporter'], {
             'type': 'lcov',
             'dir': realpath('coverage'),
@@ -215,6 +250,7 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             coverage_enable=True,
             cover_bundle=True,
             cover_test=True,
+            coverage_type='lcov',
         )
         driver = cli.KarmaDriver()
         driver.create_config(spec)

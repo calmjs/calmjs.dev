@@ -30,6 +30,7 @@ from calmjs.dev.cli import KarmaDriver
 from calmjs.dev.toolchain import KarmaToolchain
 from calmjs.dev.toolchain import COVERAGE_ENABLE
 from calmjs.dev.toolchain import COVERAGE_TYPE
+from calmjs.dev.toolchain import COVERAGE_TYPE_DEFAULT
 from calmjs.dev.toolchain import COVER_BUNDLE
 from calmjs.dev.toolchain import COVER_REPORT_DIR
 from calmjs.dev.toolchain import COVER_REPORT_FILE
@@ -254,12 +255,14 @@ class KarmaRuntime(Runtime, DriverRuntime):
 
         argparser.add_argument(
             '--coverage-type',
-            dest=COVERAGE_TYPE, default='lcov',
+            dest=COVERAGE_TYPE, default=COVERAGE_TYPE_DEFAULT,
             choices=[
+                COVERAGE_TYPE_DEFAULT,
                 'html', 'lcov', 'lcovonly', 'text', 'text-summary',
             ],
             help="the type of coverage report to generate; "
-                 "defaults to 'lcov'",
+                 "defaults to '%s'; which is a custom multi "
+                 "configuration" % COVERAGE_TYPE_DEFAULT,
         )
 
         argparser.add_argument(

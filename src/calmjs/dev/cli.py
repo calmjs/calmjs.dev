@@ -175,17 +175,36 @@ class KarmaDriver(NodeDriver):
                 paths.add(path)
 
         # for the coverageReporter key
-        coverage_reporter = {
-            'type': spec.get(COVERAGE_TYPE, COVERAGE_TYPE_DEFAULT),
-            'dir': realpath(spec.get(
-                COVER_REPORT_DIR, COVER_REPORT_DIR_DEFAULT)),
-        }
-
-        if spec.get(COVER_REPORT_FILE):
-            covfile = spec.get(COVER_REPORT_FILE)
-            if covfile.startswith(curdir + sep):
-                covfile = realpath(covfile)
-            coverage_reporter['file'] = covfile
+        cover_type = spec.get(COVERAGE_TYPE, COVERAGE_TYPE_DEFAULT)
+        cover_dir = realpath(spec.get(
+                COVER_REPORT_DIR, COVER_REPORT_DIR_DEFAULT))
+        if cover_type == COVERAGE_TYPE_DEFAULT:
+            coverage_reporter = {
+                'dir': cover_dir,
+                'reporters': [
+                    {
+                        'type': 'html',
+                        'subdir': 'html',
+                    },
+                    {
+                        'type': 'lcovonly',
+                        'file': realpath(join(cover_dir, 'coverage.lcov')),
+                    },
+                    {
+                        'type': 'text',
+                    },
+                ],
+            }
+        else:
+            coverage_reporter = {
+                'type': cover_type,
+                'dir': cover_dir,
+            }
+            if spec.get(COVER_REPORT_FILE):
+                covfile = spec.get(COVER_REPORT_FILE)
+                if covfile.startswith(curdir + sep):
+                    covfile = realpath(covfile)
+                coverage_reporter['file'] = covfile
 
         # finally, modify the config
         config['reporters'] = list(config['reporters']) + ['coverage']

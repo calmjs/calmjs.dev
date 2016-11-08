@@ -44,8 +44,10 @@ __all__ = ['KarmaRuntime', 'karma']
 
 def init_argparser_common(argparser):
 
+    # default values as empty lists to not override existing values.
+
     argparser.add_argument(
-        '--test-registry', default=None,
+        '--test-registry', default=[],
         dest=CALMJS_TEST_REGISTRY_NAMES, action=StoreDelimitedList,
         help='comma separated list of registries to use for gathering '
              'JavaScript tests from the Python packages specified via the '
@@ -55,13 +57,13 @@ def init_argparser_common(argparser):
     )
 
     argparser.add_argument(
-        '--test-registries', default=None,
+        '--test-registries', default=[],
         dest=CALMJS_TEST_REGISTRY_NAMES, action=StoreDelimitedList,
         help=SUPPRESS,
     )
 
     argparser.add_argument(
-        '--test-package', default=None,
+        '--test-package', default=[],
         dest=TEST_PACKAGE_NAMES, action=StoreDelimitedList,
         help='comma separated list of registries to use for gathering '
              'JavaScript tests from the Python packages specified via the '
@@ -71,7 +73,7 @@ def init_argparser_common(argparser):
     )
 
     argparser.add_argument(
-        '--test-packages', default=None,
+        '--test-packages', default=[],
         dest=TEST_PACKAGE_NAMES, action=StoreDelimitedList,
         help=SUPPRESS,
     )
@@ -272,22 +274,27 @@ class KarmaRuntime(Runtime, DriverRuntime):
         init_argparser_common(argparser)
 
     def _update_spec_for_karma(self, spec, **kwargs):
-        post_process = [
-            KARMA_ABORT_ON_TEST_FAILURE,
-            CALMJS_TEST_REGISTRY_NAMES,
-            TEST_PACKAGE_NAMES,
-            COVERAGE_ENABLE,
-            COVERAGE_DIR,
-            COVERAGE_TYPE,
-            COVER_BUNDLE,
-            COVER_TEST,
-        ]
-        for key in post_process:
-            if kwargs.get(key) is None:
-                # pop them out from spec
-                spec.pop(key, None)
-            else:
-                spec[key] = kwargs.get(key)
+        post_process_group = (
+            (None, [
+                KARMA_ABORT_ON_TEST_FAILURE,
+                COVERAGE_ENABLE,
+                COVERAGE_DIR,
+                COVERAGE_TYPE,
+                COVER_BUNDLE,
+                COVER_TEST,
+            ]),
+            ([], [
+                CALMJS_TEST_REGISTRY_NAMES,
+                TEST_PACKAGE_NAMES,
+            ]),
+        )
+        for defaultvalue, post_process in post_process_group:
+            for key in post_process:
+                if kwargs.get(key, defaultvalue) != defaultvalue:
+                    spec[key] = kwargs.get(key, defaultvalue)
+                else:
+                    # pop them out from spec
+                    spec.pop(key, None)
 
     def _prepare_spec_from_runtime(self, runtime, **kwargs):
         spec = runtime.kwargs_to_spec(**kwargs)

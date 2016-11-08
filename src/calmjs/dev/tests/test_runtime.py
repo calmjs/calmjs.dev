@@ -13,6 +13,7 @@ from calmjs.npm import get_npm_version
 from calmjs.npm import Driver as NPMDriver
 from calmjs.registry import _inst as root_registry
 from calmjs.runtime import main
+from calmjs.runtime import Runtime
 from calmjs.runtime import ToolchainRuntime
 from calmjs.toolchain import AdviceRegistry
 from calmjs.toolchain import NullToolchain
@@ -59,11 +60,58 @@ class BaseRuntimeTestCase(unittest.TestCase):
         driver = KarmaDriver()
         runtime = KarmaRuntime(driver)
         spec = Spec(karma_abort_on_test_failure=1)
-        runtime._update_spec_for_karma(spec, test_package_names=[])
+        runtime._update_spec_for_karma(spec, test_package_names=['default'])
         # values not provided via kwargs will be disappeared.
-        self.assertEqual(spec, {
-            'test_package_names': [],
+        self.assertEqual(dict(spec), {
+            'test_package_names': ['default'],
         })
+
+    def test_command_stacking(self):
+
+        def cleanup():
+            del mocks.nrt
+            del mocks.krt
+
+        self.addCleanup(cleanup)
+
+        make_dummy_dist(self, ((
+            'entry_points.txt',
+            '[calmjs.runtime]\n'
+            'fakerun = calmjs.testing.mocks:nrt\n'
+            'fakekarma = calmjs.testing.mocks:krt\n'
+        ),), 'example.package', '1.0')
+        working_set = WorkingSet([self._calmjs_testing_tmpdir])
+
+        mocks.nrt = TestToolchainRuntime(
+            NullToolchain(), working_set=working_set)
+        mocks.krt = KarmaRuntime(KarmaDriver(), working_set=working_set)
+
+        runtime = Runtime(working_set=working_set)
+        argparser = runtime.argparser
+
+        ns = argparser.parse_args([
+            'fakekarma',
+            '--test-packages=pkg1', '--test-registries=dummy1',
+        ])
+        self.assertEqual(ns.calmjs_test_registry_names, ['dummy1'])
+        self.assertEqual(ns.test_package_names, ['pkg1'])
+
+        ns = argparser.parse_args([
+            'fakekarma',
+            '--test-packages=pkg1', '--test-registries=dummy1',
+            'fakerun',
+        ])
+        self.assertEqual(ns.calmjs_test_registry_names, ['dummy1'])
+        self.assertEqual(ns.test_package_names, ['pkg1'])
+
+        ns = argparser.parse_args([
+            'fakekarma',
+            '--test-packages=pkg1', '--test-registries=dummy1',
+            'fakerun',
+            '--test-package=pkg2', '--test-registry=dummy2',
+        ])
+        self.assertEqual(ns.calmjs_test_registry_names, ['dummy1', 'dummy2'])
+        self.assertEqual(ns.test_package_names, ['pkg1', 'pkg2'])
 
 
 @unittest.skipIf(npm_version is None, 'npm not found.')

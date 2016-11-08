@@ -235,6 +235,41 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             'dir': realpath('coverage'),
         })
 
+    def test_create_config_with_coverage_alternative_file(self):
+        # provide bundle and also include tests
+        spec = Spec(
+            test_package_names=['calmjs.dev'],
+            source_package_names=['calmjs.dev'],
+            calmjs_test_registry_names=['calmjs.dev.module.tests'],
+            calmjs_module_registry_names=['calmjs.dev.module'],
+            bundled_targets={'jquery': 'jquery.js'},
+            # provide the other bits that normally get set up earlier.
+            transpiled_targets={
+                'calmjs/dev/main': 'calmjs/dev/main.js',
+                'calmjs/dev/__main__': 'calmjs/dev/__main__.js',
+            },
+            # for testing the filtering
+            css_targets={
+                'calmjs/dev/main': 'calmjs/dev/main.css',
+            },
+            karma_spec_keys=[
+                'bundled_targets', 'transpiled_targets', 'css_targets',
+            ],
+            coverage_enable=True,
+            coverage_type='lcovonly',
+            cover_report_dir='lcov-coverage',
+            cover_report_file='lcov.txt',
+        )
+        driver = cli.KarmaDriver()
+        driver.create_config(spec)
+
+        self.assertIn('coverage', spec['karma_config']['reporters'])
+        self.assertEqual(spec['karma_config']['coverageReporter'], {
+            'type': 'lcovonly',
+            'dir': realpath('lcov-coverage'),
+            'file': 'lcov.txt',
+        })
+
     def test_write_config_not_enough_info(self):
         build_dir = mkdtemp(self)
         spec = Spec(build_dir=build_dir)

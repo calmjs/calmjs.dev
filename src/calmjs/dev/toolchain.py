@@ -13,6 +13,8 @@ COVERAGE_TYPE = 'coverage_type'
 COVER_BUNDLE = 'cover_bundle'
 # the dir to write the coverage report to
 COVER_REPORT_DIR = 'cover_report_dir'
+# the file to write the coverage report to for selected reporters.
+COVER_REPORT_FILE = 'cover_report_file'
 # flag for including coverage report for tests.
 COVER_TEST = 'cover_test'
 

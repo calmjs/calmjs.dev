@@ -29,9 +29,9 @@ from calmjs.runtime import Runtime
 from calmjs.dev.cli import KarmaDriver
 from calmjs.dev.toolchain import KarmaToolchain
 from calmjs.dev.toolchain import COVERAGE_ENABLE
-from calmjs.dev.toolchain import COVERAGE_DIR
 from calmjs.dev.toolchain import COVERAGE_TYPE
 from calmjs.dev.toolchain import COVER_BUNDLE
+from calmjs.dev.toolchain import COVER_REPORT_DIR
 from calmjs.dev.toolchain import COVER_TEST
 from calmjs.dev.karma import BEFORE_KARMA_ADVICE_LIST
 from calmjs.dev.karma import KARMA_ABORT_ON_TEST_FAILURE
@@ -237,8 +237,8 @@ class KarmaRuntime(Runtime, DriverRuntime):
         )
 
         argparser.add_argument(
-            '--coverage-dir',
-            dest=COVERAGE_DIR, action='store', default='coverage',
+            '--cover-report-dir',
+            dest=COVER_REPORT_DIR, action='store', default='coverage',
             help="location to store the coverage report; "
                  "defaults to 'coverage'",
         )
@@ -278,7 +278,7 @@ class KarmaRuntime(Runtime, DriverRuntime):
             (None, [
                 KARMA_ABORT_ON_TEST_FAILURE,
                 COVERAGE_ENABLE,
-                COVERAGE_DIR,
+                COVER_REPORT_DIR,
                 COVERAGE_TYPE,
                 COVER_BUNDLE,
                 COVER_TEST,

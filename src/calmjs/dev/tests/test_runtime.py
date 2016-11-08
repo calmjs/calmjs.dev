@@ -339,8 +339,8 @@ class CliRuntimeTestCase(unittest.TestCase):
         )
 
         # ensure coverage isn't run at all.
-        coverage_dir = join(build_dir, 'coverage')
-        self.assertFalse(exists(coverage_dir))
+        coverage_report_dir = join(build_dir, 'coverage')
+        self.assertFalse(exists(coverage_report_dir))
 
     def test_karma_runtime_integration_coverage(self):
 
@@ -369,9 +369,9 @@ class CliRuntimeTestCase(unittest.TestCase):
         stub_stdouts(self)
         target = join(mkdtemp(self), 'target')
         build_dir = mkdtemp(self)
-        coverage_dir = join(build_dir, 'coverage')
+        coverage_report_dir = join(build_dir, 'coverage')
         # ensure this does not already exist
-        self.assertFalse(exists(coverage_dir))
+        self.assertFalse(exists(coverage_report_dir))
 
         stub_item_attr_value(
             self, mocks, 'dummy',
@@ -385,13 +385,13 @@ class CliRuntimeTestCase(unittest.TestCase):
         working_set = WorkingSet([self._calmjs_testing_tmpdir])
         rt = KarmaRuntime(self.driver, working_set=working_set)
         result = rt([
-            '--coverage', '--coverage-dir', coverage_dir,
+            '--coverage', '--cover-report-dir', coverage_report_dir,
             'null', '--export-target', target, '--build-dir', build_dir,
         ])
 
         # ensure coverage report created
         self.assertTrue(result['coverage_enable'])
-        self.assertTrue(exists(coverage_dir))
+        self.assertTrue(exists(coverage_report_dir))
 
     def test_karma_runtime_integration_explicit_arguments(self):
         stub_stdouts(self)

@@ -33,13 +33,13 @@ from calmjs.dev import karma
 from calmjs.dev import utils
 
 from calmjs.dev.toolchain import COVERAGE_ENABLE
-from calmjs.dev.toolchain import COVERAGE_DIR
 from calmjs.dev.toolchain import COVERAGE_TYPE
 from calmjs.dev.toolchain import COVER_BUNDLE
+from calmjs.dev.toolchain import COVER_REPORT_DIR
 from calmjs.dev.toolchain import COVER_TEST
 
-from calmjs.dev.toolchain import COVERAGE_DIR_DEFAULT
 from calmjs.dev.toolchain import COVERAGE_TYPE_DEFAULT
+from calmjs.dev.toolchain import COVER_REPORT_DIR_DEFAULT
 
 logger = logging.getLogger(__name__)
 
@@ -174,7 +174,8 @@ class KarmaDriver(NodeDriver):
         # for the coverageReporter key
         coverage_reporter = {
             'type': spec.get(COVERAGE_TYPE, COVERAGE_TYPE_DEFAULT),
-            'dir': realpath(spec.get(COVERAGE_DIR, COVERAGE_DIR_DEFAULT)),
+            'dir': realpath(spec.get(
+                COVER_REPORT_DIR, COVER_REPORT_DIR_DEFAULT)),
         }
 
         # finally, modify the config

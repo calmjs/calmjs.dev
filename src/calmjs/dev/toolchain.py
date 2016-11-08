@@ -7,18 +7,18 @@ from calmjs.dist import get_module_registry_names
 # reserved terms
 # flag for enabling coverage through karma-coverage (istanbul)
 COVERAGE_ENABLE = 'coverage_enable'
-# the dir to write the coverage report to
-COVERAGE_DIR = 'coverage_dir'
 # the type of the coverage report to generate
 COVERAGE_TYPE = 'coverage_type'
 # flag for including coverage report for bundled modules
 COVER_BUNDLE = 'cover_bundle'
+# the dir to write the coverage report to
+COVER_REPORT_DIR = 'cover_report_dir'
 # flag for including coverage report for tests.
 COVER_TEST = 'cover_test'
 
 # values for some of the above keys
 COVERAGE_TYPE_DEFAULT = 'lcov'
-COVERAGE_DIR_DEFAULT = 'coverage'
+COVER_REPORT_DIR_DEFAULT = 'coverage'
 
 
 class TestToolchain(Toolchain):

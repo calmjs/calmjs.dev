@@ -2,6 +2,7 @@
 import unittest
 import json
 from os.path import basename
+from os.path import curdir
 from os.path import exists
 from os.path import join
 from os.path import realpath
@@ -237,7 +238,7 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
 
     def test_create_config_with_coverage_alternative_file(self):
         # provide bundle and also include tests
-        spec = Spec(
+        original = dict(
             test_package_names=['calmjs.dev'],
             source_package_names=['calmjs.dev'],
             calmjs_test_registry_names=['calmjs.dev.module.tests'],
@@ -260,6 +261,7 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             cover_report_dir='lcov-coverage',
             cover_report_file='lcov.txt',
         )
+        spec = Spec(original)
         driver = cli.KarmaDriver()
         driver.create_config(spec)
 
@@ -268,6 +270,18 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             'type': 'lcovonly',
             'dir': realpath('lcov-coverage'),
             'file': 'lcov.txt',
+        })
+
+        original['cover_report_file'] = join(curdir, 'lcov.txt')
+        spec = Spec(original)
+        driver = cli.KarmaDriver()
+        driver.create_config(spec)
+
+        self.assertIn('coverage', spec['karma_config']['reporters'])
+        self.assertEqual(spec['karma_config']['coverageReporter'], {
+            'type': 'lcovonly',
+            'dir': realpath('lcov-coverage'),
+            'file': realpath('lcov.txt'),
         })
 
     def test_write_config_not_enough_info(self):

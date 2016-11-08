@@ -6,8 +6,10 @@ This module provides interface to the karma cli runtime.
 import logging
 import os
 import re
+from os.path import curdir
 from os.path import join
 from os.path import realpath
+from os.path import sep
 from subprocess import call
 
 from calmjs.exc import AdviceAbort
@@ -180,7 +182,10 @@ class KarmaDriver(NodeDriver):
         }
 
         if spec.get(COVER_REPORT_FILE):
-            coverage_reporter['file'] = spec.get(COVER_REPORT_FILE)
+            covfile = spec.get(COVER_REPORT_FILE)
+            if covfile.startswith(curdir + sep):
+                covfile = realpath(covfile)
+            coverage_reporter['file'] = covfile
 
         # finally, modify the config
         config['reporters'] = list(config['reporters']) + ['coverage']

@@ -23,6 +23,7 @@ from calmjs.toolchain import BUILD_DIR
 from calmjs.toolchain import ARTIFACT_PATHS
 from calmjs.toolchain import CALMJS_MODULE_REGISTRY_NAMES
 from calmjs.toolchain import CALMJS_TEST_REGISTRY_NAMES
+from calmjs.toolchain import GENERATE_SOURCE_MAP
 from calmjs.toolchain import SOURCE_PACKAGE_NAMES
 from calmjs.toolchain import TEST_PACKAGE_NAMES
 from calmjs.toolchain import TEST_MODULE_PATHS_MAP
@@ -191,6 +192,10 @@ class KarmaDriver(NodeDriver):
                         'file': realpath(join(cover_dir, 'coverage.lcov')),
                     },
                     {
+                        'type': 'json',
+                        'file': realpath(join(cover_dir, 'coverage.json')),
+                    },
+                    {
                         'type': 'text',
                     },
                 ],
@@ -282,6 +287,10 @@ class KarmaDriver(NodeDriver):
         """
         Setup a spec for execution.
         """
+
+        # must use source map if coverage is enabled
+        if spec.get(COVERAGE_ENABLE):
+            spec[GENERATE_SOURCE_MAP] = True
 
         spec[karma.KARMA_SPEC_KEYS] = utils.get_toolchain_targets_keys(
             toolchain, exclude_targets_from=())

@@ -95,6 +95,15 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             driver.test_spec(spec)
         self.assertNotIn('karma_return_code', spec)
 
+    def test_setup_cover(self):
+        build_dir = mkdtemp(self)
+        toolchain = NullToolchain()
+        spec = Spec(build_dir=build_dir, coverage_enable=True)
+        driver = cli.KarmaDriver()
+        driver.binary = None
+        driver.setup_toolchain_spec(toolchain, spec)
+        self.assertTrue(spec['generate_source_map'])
+
     def test_create_config_base(self):
         spec = Spec()
         driver = cli.KarmaDriver()
@@ -193,7 +202,7 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
         )
         # default specifies three different reporters.
         self.assertEqual(
-            len(spec['karma_config']['coverageReporter']['reporters']), 3)
+            len(spec['karma_config']['coverageReporter']['reporters']), 4)
 
     def test_create_config_with_coverage_standard_specified(self):
         # this is usually provided by the toolchains themselves

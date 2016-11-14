@@ -148,7 +148,7 @@ class KarmaDriver(NodeDriver):
             logger.debug("spec has '%s' explicitly specified", target)
             return result
         logger.debug(
-            "spec has no '%s' specified, falling back to '%s'",
+            "spec has no '%s' specified, using '%s' as fallback",
             target, fallback
         )
         result = spec.get(fallback, default)

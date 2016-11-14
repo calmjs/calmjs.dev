@@ -2,7 +2,7 @@
 from calmjs.toolchain import Toolchain
 from calmjs.toolchain import CALMJS_MODULE_REGISTRY_NAMES
 from calmjs.toolchain import TEST_PACKAGE_NAMES
-from calmjs.dist import get_module_registry_names
+from calmjs.dist import flatten_module_registry_names
 
 # reserved terms
 # flag for enabling coverage through karma-coverage (istanbul)
@@ -60,5 +60,5 @@ class KarmaToolchain(TestToolchain):
     def prepare(self, spec):
         # simply add the registry names provided by as test package
         # names
-        spec[CALMJS_MODULE_REGISTRY_NAMES] = get_module_registry_names(
+        spec[CALMJS_MODULE_REGISTRY_NAMES] = flatten_module_registry_names(
             spec.get(TEST_PACKAGE_NAMES, []))

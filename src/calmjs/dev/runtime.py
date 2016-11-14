@@ -67,11 +67,9 @@ def init_argparser_common(argparser):
     argparser.add_argument(
         '--test-package', default=[],
         dest=TEST_PACKAGE_NAMES, action=StoreDelimitedList,
-        help='comma separated list of registries to use for gathering '
-             'JavaScript tests from the Python packages specified via the '
-             'toolchain runtime; default behavior is to auto-select, '
-             'enable verbose output to check to see which ones were '
-             'selected',
+        help='comma separated list of Python packages to gather JavaScript '
+             'tests from; this is an explicit list, no dependency resolution '
+             'will be applied'
     )
 
     argparser.add_argument(

@@ -127,11 +127,11 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
         )
         self.assertIn(
             "spec has no 'test_package_names' specified, "
-            "falling back to 'source_package_names'", log.getvalue(),
+            "using 'source_package_names' as fallback", log.getvalue(),
         )
         self.assertIn(
             "spec has no 'calmjs_test_registry_names' specified, "
-            "falling back to 'calmjs_module_registry_names'", log.getvalue(),
+            "using 'calmjs_module_registry_names' as fallback", log.getvalue(),
         )
         self.assertIn(
             "karma driver to extract tests from packages ['calmjs.dev'] "

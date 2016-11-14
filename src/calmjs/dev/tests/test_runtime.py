@@ -554,14 +554,14 @@ class CliRuntimeTestCase(unittest.TestCase):
 
         _called = []
 
-        def fake_get_module_registry_names(package_names):
+        def fake_flatten_module_registry_names(package_names):
             _called.extend(package_names)
             return ['calmjs.dev.module']
 
         from calmjs.dev import toolchain
         stub_item_attr_value(
-            self, toolchain, 'get_module_registry_names',
-            fake_get_module_registry_names
+            self, toolchain, 'flatten_module_registry_names',
+            fake_flatten_module_registry_names
         )
 
         working_set = WorkingSet([self._calmjs_testing_tmpdir])

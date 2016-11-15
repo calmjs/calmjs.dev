@@ -31,12 +31,13 @@ from calmjs.dev.toolchain import KarmaToolchain
 from calmjs.dev.toolchain import COVERAGE_ENABLE
 from calmjs.dev.toolchain import COVERAGE_TYPE
 from calmjs.dev.toolchain import COVERAGE_TYPE_DEFAULT
+from calmjs.dev.toolchain import COVER_ARTIFACT
 from calmjs.dev.toolchain import COVER_BUNDLE
 from calmjs.dev.toolchain import COVER_REPORT_DIR
 from calmjs.dev.toolchain import COVER_REPORT_FILE
 from calmjs.dev.toolchain import COVER_TEST
-from calmjs.dev.karma import BEFORE_KARMA_ADVICE_LIST
 from calmjs.dev.karma import KARMA_ABORT_ON_TEST_FAILURE
+from calmjs.dev.karma import KARMA_BROWSERS
 from calmjs.dev.karma import KARMA_EXTRA_FRAMEWORKS
 
 logger = logging.getLogger(__name__)
@@ -76,6 +77,65 @@ def init_argparser_common(argparser):
         '--test-packages', default=[],
         dest=TEST_PACKAGE_NAMES, action=StoreDelimitedList,
         help=SUPPRESS,
+    )
+
+    argparser.add_argument(
+        '--browser', default=[],
+        dest=KARMA_BROWSERS, action=StoreDelimitedList,
+        help='comma separated list of browsers to use for testing; the must'
+             'be available within the current Node.js installation; '
+             'defaults to PhantomJS',
+    )
+
+    argparser.add_argument(
+        '--browsers', default=[],
+        dest=KARMA_BROWSERS, action=StoreDelimitedList,
+        help=SUPPRESS,
+    )
+
+    argparser.add_argument(
+        '-c', '--coverage',
+        dest=COVERAGE_ENABLE, action='store_true',
+        help='enable coverage report',
+    )
+
+    argparser.add_argument(
+        '--cover-report-dir',
+        dest=COVER_REPORT_DIR, action='store', default='coverage',
+        help="location to store the coverage report; "
+             "defaults to 'coverage'",
+    )
+
+    argparser.add_argument(
+        '--cover-report-file',
+        dest=COVER_REPORT_FILE, action='store',
+        help="location to write the coverage report file for "
+             "coverage types that write out to a single file; "
+             "defaults to unspecified",
+    )
+
+    argparser.add_argument(
+        '--coverage-type',
+        dest=COVERAGE_TYPE, default=COVERAGE_TYPE_DEFAULT,
+        choices=[
+            COVERAGE_TYPE_DEFAULT,
+            'html', 'lcov', 'lcovonly', 'text', 'text-summary',
+        ],
+        help="the type of coverage report to generate; "
+             "defaults to '%s'; which is a custom multi "
+             "configuration" % COVERAGE_TYPE_DEFAULT,
+    )
+
+    argparser.add_argument(
+        '--cover-bundle',
+        dest=COVER_BUNDLE, action='store_true',
+        help="include bundled sources for coverage report",
+    )
+
+    argparser.add_argument(
+        '--cover-test',
+        dest=COVER_TEST, action='store_true',
+        help="include test sources for coverage report",
     )
 
 
@@ -131,23 +191,11 @@ class TestToolchainRuntime(ToolchainRuntime):
         )
 
         argparser.add_argument(
-            '--before-karma', default=None,
-            dest=BEFORE_KARMA_ADVICE_LIST, action=StoreDelimitedList,
-            help="list of other advices to be executed before karma; these "
-                 "advices must accept the identity spec as their only "
-                 "arguments; typically, the --toolchain-package may be used "
-                 "instead if the package that generated the artifacts have "
-                 "registered this correctly to the KarmaToolchain; in any "
-                 "case, consult the documentation of the toolchain to note "
-                 "whether or not they support the execution through the "
-                 "karma runtime as provided",
-        )
-
-        argparser.add_argument(
-            '--extra-frameworks', default=None,
+            '--extra-frameworks', default=[],
             dest=KARMA_EXTRA_FRAMEWORKS, action=StoreDelimitedList,
             help='comma separated list of extra frameworks that should be '
-                 'added into the configuration',
+                 'added into the karma configuration; the package for the '
+                 'framework must exist for the current Node.js installation',
         )
 
         argparser.add_argument(
@@ -160,6 +208,12 @@ class TestToolchainRuntime(ToolchainRuntime):
                  'for details; this is used for setting up advices for '
                  'getting karma to start correctly for whatever framework '
                  'that was used; only one may be specified',
+        )
+
+        argparser.add_argument(
+            '--cover-artifact',
+            dest=COVER_ARTIFACT, action='store_true',
+            help="include artifacts for coverage report",
         )
 
         init_argparser_common(argparser)
@@ -231,51 +285,6 @@ class KarmaRuntime(Runtime, DriverRuntime):
         super(KarmaRuntime, self).init_argparser(argparser)
 
         argparser.add_argument(
-            '-c', '--coverage',
-            dest=COVERAGE_ENABLE, action='store_true',
-            help='enable coverage report',
-        )
-
-        argparser.add_argument(
-            '--cover-report-dir',
-            dest=COVER_REPORT_DIR, action='store', default='coverage',
-            help="location to store the coverage report; "
-                 "defaults to 'coverage'",
-        )
-
-        argparser.add_argument(
-            '--cover-report-file',
-            dest=COVER_REPORT_FILE, action='store',
-            help="location to write the coverage report file for "
-                 "coverage types that write out to a single file; "
-                 "defaults to unspecified",
-        )
-
-        argparser.add_argument(
-            '--coverage-type',
-            dest=COVERAGE_TYPE, default=COVERAGE_TYPE_DEFAULT,
-            choices=[
-                COVERAGE_TYPE_DEFAULT,
-                'html', 'lcov', 'lcovonly', 'text', 'text-summary',
-            ],
-            help="the type of coverage report to generate; "
-                 "defaults to '%s'; which is a custom multi "
-                 "configuration" % COVERAGE_TYPE_DEFAULT,
-        )
-
-        argparser.add_argument(
-            '--cover-bundle',
-            dest=COVER_BUNDLE, action='store_true',
-            help="include bundled sources for coverage report",
-        )
-
-        argparser.add_argument(
-            '--cover-test',
-            dest=COVER_TEST, action='store_true',
-            help="include test sources for coverage report",
-        )
-
-        argparser.add_argument(
             '-I', '--ignore-errors',
             dest=KARMA_ABORT_ON_TEST_FAILURE, action='store_false',
             help='do not abort execution on failure',
@@ -291,12 +300,15 @@ class KarmaRuntime(Runtime, DriverRuntime):
                 COVER_REPORT_DIR,
                 COVER_REPORT_FILE,
                 COVERAGE_TYPE,
+                COVER_ARTIFACT,
                 COVER_BUNDLE,
                 COVER_TEST,
             ]),
             ([], [
                 CALMJS_TEST_REGISTRY_NAMES,
                 TEST_PACKAGE_NAMES,
+                KARMA_BROWSERS,
+                KARMA_EXTRA_FRAMEWORKS,
             ]),
         )
         for defaultvalue, post_process in post_process_group:
@@ -331,6 +343,7 @@ class KarmaRuntime(Runtime, DriverRuntime):
 
         argparser.print_help()
         return
+
 
 # this will be registered to the karma specific thing.
 run = TestToolchainRuntime(KarmaToolchain())

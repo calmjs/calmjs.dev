@@ -21,6 +21,7 @@ from calmjs.toolchain import Spec
 from calmjs.toolchain import CALMJS_TOOLCHAIN_ADVICE
 from calmjs.utils import pretty_logging
 
+from calmjs.dev import cli
 from calmjs.dev.cli import KarmaDriver
 from calmjs.dev.toolchain import TestToolchain
 from calmjs.dev.runtime import KarmaRuntime
@@ -31,7 +32,9 @@ from calmjs.testing.utils import make_dummy_dist
 from calmjs.testing.utils import mkdtemp
 from calmjs.testing.utils import rmtree
 from calmjs.testing.utils import setup_class_install_environment
+from calmjs.testing.utils import stub_base_which
 from calmjs.testing.utils import stub_item_attr_value
+from calmjs.testing.utils import stub_mod_call
 from calmjs.testing.utils import stub_stdouts
 
 npm_version = get_npm_version()
@@ -112,6 +115,28 @@ class BaseRuntimeTestCase(unittest.TestCase):
         ])
         self.assertEqual(ns.calmjs_test_registry_names, ['dummy1', 'dummy2'])
         self.assertEqual(ns.test_package_names, ['pkg1', 'pkg2'])
+
+    def test_karma_runtime_arguments(self):
+        stub_stdouts(self)
+        stub_mod_call(self, cli)
+        stub_base_which(self, 'karma')
+
+        build_dir = mkdtemp(self)
+        rt = KarmaRuntime(KarmaDriver())
+        # the artifact in our case is identical to the source file
+        artifact = resource_filename('calmjs.dev', 'main.js')
+        result = rt([
+            'run', '--artifact', artifact,
+            '--build-dir', build_dir,
+            '--test-package', 'calmjs.dev',
+            '--extra-frameworks', 'my_framework',
+            '--browser', 'Chromium,Firefox',
+        ])
+        self.assertTrue(exists(result['karma_config_path']))
+        self.assertIn('karma_config_path', result)
+        self.assertIn('my_framework', result['karma_config']['frameworks'])
+        self.assertEqual(
+            ['Chromium', 'Firefox'], result['karma_config']['browsers'])
 
 
 @unittest.skipIf(npm_version is None, 'npm not found.')
@@ -494,6 +519,37 @@ class CliRuntimeTestCase(unittest.TestCase):
         self.assertNotIn("CRITICAL", sys.stderr.getvalue())
         # plenty of info though
         self.assertIn("INFO", sys.stderr.getvalue())
+
+    def test_karma_runtime_run_artifact_cover(self):
+        stub_stdouts(self)
+
+        def cleanup():
+            root_registry.records.pop('calmjs.dev.module.tests', None)
+
+        self.addCleanup(cleanup)
+
+        build_dir = mkdtemp(self)
+        # manipulate the registry to remove the fail test
+        reg = root_registry.get('calmjs.dev.module.tests')
+        reg.records['calmjs.dev.tests'].pop('calmjs/dev/tests/test_fail', '')
+
+        # use the full blown runtime
+        rt = KarmaRuntime(self.driver)
+        # the artifact in our case is identical to the source file
+        artifact = resource_filename('calmjs.dev', 'main.js')
+        result = rt([
+            'run', '--artifact', artifact,
+            '--build-dir', build_dir,
+            '--test-registry', 'calmjs.dev.module.tests',
+            '--test-package', 'calmjs.dev',
+            '--coverage', '--cover-artifact',
+        ])
+        self.assertIn('karma_config_path', result)
+        self.assertTrue(exists(result['karma_config_path']))
+        # should exit cleanly
+        self.assertNotIn(
+            "karma exited with return code 1", sys.stderr.getvalue())
+        self.assertIn(artifact, result['karma_config']['preprocessors'])
 
     def test_karma_runtime_run_toolchain_package(self):
         def cleanup():

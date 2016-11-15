@@ -37,6 +37,7 @@ from calmjs.dev import utils
 
 from calmjs.dev.toolchain import COVERAGE_ENABLE
 from calmjs.dev.toolchain import COVERAGE_TYPE
+from calmjs.dev.toolchain import COVER_ARTIFACT
 from calmjs.dev.toolchain import COVER_BUNDLE
 from calmjs.dev.toolchain import COVER_REPORT_DIR
 from calmjs.dev.toolchain import COVER_REPORT_FILE
@@ -52,22 +53,6 @@ class KarmaDriver(NodeDriver):
     """
     The karma driver
     """
-
-    # dream cli?
-    # calmjs karma --test-registry calmjs.tests nunja.tests \
-    #     rjs --build-dir foo --source-registry calmjs.module nunja.mold -- \
-    #     nunja
-    # this way, must assert that the target DriverRuntime is of that
-    # type, AND that its' cli_driver is a Toolchain instance.
-    # or rather
-    # calmjs karma --test-registry nunja.tests --source-registry nunja.mold
-    # for a live mode
-
-    # bundling of course will simply be
-    # calmjs rjs --source-registry nunja.mold --export-filename nunja.js
-    # then the testing of the bundle
-    # calmjs karma --test-registry nunja.tests <packages> --with-artifact \
-    #     nunja.js
 
     def __init__(
             self,
@@ -108,6 +93,8 @@ class KarmaDriver(NodeDriver):
         # <https://github.com/karma-runner/karma-firefox-launcher/pull/58>
         call_kw = self._gen_call_kws(
             HOME=os.environ.get('HOME', ''),
+            # need this on POSIX platform for visual browsers.
+            DISPLAY=os.environ.get('DISPLAY', ''),
         )
         logger.info('invoking %s start %r', self.binary, config_fn)
         # TODO would be great if there is a way to "tee" the result into
@@ -175,6 +162,10 @@ class KarmaDriver(NodeDriver):
             for path in test_module_paths:
                 paths.add(path)
 
+        if spec.get(COVER_ARTIFACT):
+            for path in spec.get(ARTIFACT_PATHS):
+                paths.add(path)
+
         # for the coverageReporter key
         cover_type = spec.get(COVERAGE_TYPE, COVERAGE_TYPE_DEFAULT)
         cover_dir = realpath(spec.get(
@@ -240,6 +231,11 @@ class KarmaDriver(NodeDriver):
             package_names, module_registries))
 
         config = karma.build_base_config()
+        config['frameworks'].extend(spec.get(karma.KARMA_EXTRA_FRAMEWORKS, []))
+
+        if spec.get(karma.KARMA_BROWSERS, []):
+            config['browsers'] = spec.get(karma.KARMA_BROWSERS, [])
+
         files = list(utils.get_targets_from_spec(spec, spec_keys))
         test_module_paths = sorted(test_module_paths_map.values())
 

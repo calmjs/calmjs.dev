@@ -9,6 +9,8 @@ from calmjs.dist import flatten_module_registry_names
 COVERAGE_ENABLE = 'coverage_enable'
 # the type of the coverage report to generate
 COVERAGE_TYPE = 'coverage_type'
+# flag for including coverage report for artifacts
+COVER_ARTIFACT = 'cover_artifact'
 # flag for including coverage report for bundled modules
 COVER_BUNDLE = 'cover_bundle'
 # the dir to write the coverage report to

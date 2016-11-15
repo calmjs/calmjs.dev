@@ -6,9 +6,9 @@ Module that provides integration with karma.
 # spec keys
 AFTER_KARMA = 'after_karma'
 BEFORE_KARMA = 'before_karma'
-BEFORE_KARMA_ADVICE_LIST = 'before_karma_advice_list'
 KARMA_ABORT_ON_TEST_FAILURE = 'karma_abort_on_test_failure'
 KARMA_ADVICE_GROUP = 'karma_advice_group'
+KARMA_BROWSERS = 'karma_browsers'
 KARMA_CONFIG = 'karma_config'
 KARMA_CONFIG_PATH = 'karma_config_path'
 KARMA_EXTRA_FRAMEWORKS = 'karma_extra_frameworks'
@@ -42,7 +42,10 @@ def build_base_config(
     Build a base karma configuration file.
     """
 
-    return {k: v for k, v in locals().items() if k in [
+    def to_value(v):
+        return list(v) if isinstance(v, tuple) else v
+
+    return {k: to_value(v) for k, v in locals().items() if k in [
         'baseUrl', 'frameworks', 'reporters', 'port', 'colors', 'logLevel',
         'browsers', 'captureTimeout', 'singleRun',
     ]}

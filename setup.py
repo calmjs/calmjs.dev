@@ -50,7 +50,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'calmjs>=2.0.0.dev,<3',
+        'calmjs>=2.0.0,<3',
     ],
     package_json=package_json,
     entry_points={

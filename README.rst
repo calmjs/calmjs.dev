@@ -1,28 +1,53 @@
 calmjs.dev
 ==========
 
-A package that declares common development tools that integrates with
-|calmjs|_ along with commonly used `Node.js`_ development frameworks.
+Package within the `Calmjs framework`_ for the support and development
+of Python packages that include JavaScript for their full functionality.
+
+.. image:: https://travis-ci.org/calmjs/calmjs.dev.svg?branch=master
+    :target: https://travis-ci.org/calmjs/calmjs.dev
+.. image:: https://ci.appveyor.com/api/projects/status/0mxtiaf2j98w5fy6/branch/master?svg=true
+    :target: https://ci.appveyor.com/project/metatoaster/calmjs-dev/branch/master
+.. image:: https://coveralls.io/repos/github/calmjs/calmjs.dev/badge.svg?branch=master
+    :target: https://coveralls.io/github/calmjs/calmjs.dev?branch=master
 
 
 Introduction
 ------------
 
-In order to facilitate a standardized deployment of working Node.js
-environments from within Python environments for the execution of
-JavaScript tests provided by Python packages against their accompanied
-JavaScript code, this package declares a set of commonly used
-development packages in the ``devDependencies`` section in its
-``package.json`` file which is declared through the ``calmjs``
-extensions to |setuptools|_.  Other Python packages may then declare
-their dependencies through ``setup.py`` to pick up and make use of the
-following set of tools through the appropriate entry points to
-``calmjs`` and/or ``setuptools`` command.
+Python packages can ship JavaScript code.  This situation is commonly
+found in situations where frontend functionalities that enhance user
+experience that require interactions with backend Python code running on
+the server.  In order to facilitate the testing of those JavaScript code
+from those Python packages, commonly `Node.js`_ packages and frameworks
+are often used to achieve this.  However, the configurations files for
+the Node.js/JavaScript package dependencies, along with the building of
+artifacts and testing of the JavaScript provided by those Python
+packages are very specific to the project and generally not portable.
+If multiple such packages are required for a downstream Python project,
+the scripts and definition files for building of artifacts and testing
+generally have to be manually modified, which is typically a very
+aggravating and error-prone process.
+
+The Calmjs framework, however, provides the means for Python packages to
+declare the JavaScript modules they are to export, and this package,
+|calmjs.dev|, provides the means to consume those information such that
+the JavaScript tests declared within those Python packages can be
+executed without having to manually construct and verify the paths to
+the source and tests files, no matter where they are within the
+environment, provided they are properly declared through the Calmjs
+framework.  The tests can then run either against the JavaScript sources
+provided by the Python package through the artifact generation
+framework, or against prebuilt artifacts that contain those
+functionalities.  Naturally, the support for the artifact generation
+framework requires integration with the Calmjs framework; currently, the
+support of AMD is implemented through the |calmjs.rjs|_ package.
 
 .. |calmjs| replace:: ``calmjs``
 .. |calmjs.dev| replace:: ``calmjs.dev``
 .. |calmjs.rjs| replace:: ``calmjs.rjs``
 .. |setuptools| replace:: ``setuptools``
+.. _Calmjs framework: https://pypi.python.org/pypi/calmjs
 .. _calmjs: https://pypi.python.org/pypi/calmjs
 .. _calmjs.rjs: https://pypi.python.org/pypi/calmjs.rjs
 .. _Node.js: https://nodejs.org
@@ -53,8 +78,8 @@ Features
   For full details on the environment that will be installed through the
   |calmjs| framework, the command ``calmjs npm calmjs.dev`` can be
   invoked to view the ``package.json`` once this package is installed
-  into a Python environment, or even install them into the current
-  working directory.
+  into a Python environment.  For installation, please refer to the
+  following section.
 
 - Through the use of the |calmjs| module registry system, Python
   packages can declare JavaScript sources that can be passed through

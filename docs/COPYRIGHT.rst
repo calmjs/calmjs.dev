@@ -1,4 +1,5 @@
-calmjs.dev Copyright 2016, <YOUR NAME HERE>
+calmjs.dev Copyright 2016, Auckland Bioengineering Institute, University
+of Auckland.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

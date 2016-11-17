@@ -1,8 +1,9 @@
 calmjs.dev
 ==========
 
-Package within the `Calmjs framework`_ for the support and development
-of Python packages that include JavaScript for their full functionality.
+Package for aiding the development of JavaScript code to be provided as
+part of Python packages through integration with `Node.js`_ development
+tools into a Python environment via the `Calmjs framework`_.
 
 .. image:: https://travis-ci.org/calmjs/calmjs.dev.svg?branch=master
     :target: https://travis-ci.org/calmjs/calmjs.dev
@@ -15,19 +16,25 @@ of Python packages that include JavaScript for their full functionality.
 Introduction
 ------------
 
-Python packages can ship JavaScript code.  This situation is commonly
-found in situations where frontend functionalities that enhance user
-experience that require interactions with backend Python code running on
-the server.  In order to facilitate the testing of those JavaScript code
-from those Python packages, commonly `Node.js`_ packages and frameworks
-are often used to achieve this.  However, the configurations files for
-the Node.js/JavaScript package dependencies, along with the building of
-artifacts and testing of the JavaScript provided by those Python
-packages are very specific to the project and generally not portable.
-If multiple such packages are required for a downstream Python project,
-the scripts and definition files for building of artifacts and testing
-generally have to be manually modified, which is typically a very
-aggravating and error-prone process.
+Python packages can contain arbitrary resource files, which can include
+JavaScript sources.  This situation is commonly found in packages that
+provide frontend functionalities that enhance user experience that
+require interactions with a related backend Python code running on the
+server provided by the given package.  In order to facilitate the
+testing of those JavaScript code from those Python packages, commonly
+`Node.js`_ packages and frameworks are often used to achieve this.
+
+Typically, for the management of this dependency, this often require two
+or more separate package management systems that are not properly aware
+of each other, resulting in often cumbersome linkage or needless
+duplication of packages installed on a given system.  Moreover, the
+configurations files for the Node.js/JavaScript package dependencies,
+along with the building of artifacts and testing of the JavaScript
+provided by those Python packages are very specific to the given project
+and generally not portable.  If multiple such packages are required for
+a downstream Python project, the scripts and definition files for
+building of artifacts and testing generally have to be manually
+modified, which is often a very aggravating and error-prone process.
 
 The Calmjs framework, however, provides the means for Python packages to
 declare the JavaScript modules they are to export, and this package,
@@ -46,6 +53,7 @@ support of AMD is implemented through the |calmjs.rjs|_ package.
 .. |calmjs| replace:: ``calmjs``
 .. |calmjs.dev| replace:: ``calmjs.dev``
 .. |calmjs.rjs| replace:: ``calmjs.rjs``
+.. |npm| replace:: ``npm``
 .. |setuptools| replace:: ``setuptools``
 .. _Calmjs framework: https://pypi.python.org/pypi/calmjs
 .. _calmjs: https://pypi.python.org/pypi/calmjs
@@ -70,8 +78,8 @@ Features
       A headless webkit with JavaScript API capable of interfacing with
       karma; this enables the running of integration JavaScript tests.
   |sinon|_
-      A set of spies stubs and mocks for JavaScript for working with a
-      unit testing framework.
+      A set of spies, stubs and mocks for JavaScript, for working with
+      unit testing frameworks.
 
   Plus other integration packages that get them to work with each other,
   namely the various ``karma-*`` packages for integration with |karma|.
@@ -103,10 +111,46 @@ Features
 Installation
 ------------
 
-Currently under development, please install by cloning this repository
-and run ``python setup.py develop`` within a working Python environment,
-or follow the local framework or operating system's default method on
-installation of development packages that have pulled this package in.
+As the goal of |calmjs.dev| is to integrate Node.js development tools
+into a Python environment, both Node.js and |npm| are required to be
+available within the target installation environment; if they are not
+installed please follow the installation steps for `Node.js`_
+appropriate for the target operating system/environment/platform.
+
+Naturally, since this is achieved through |calmjs|, it will need to be
+available in the target installation environment; however, this is
+achieved simply by installing |calmjs.dev| through ``pip`` from PyPI.
+
+.. code:: sh
+
+    $ pip install calmjs.dev
+
+Alternative installation methods (for developers, advanced users)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Development is still ongoing with |calmjs.dev|, for the latest features
+and bug fixes, the development version may be desirable; however, the
+|calmjs| package *must* be installed first, otherwise the metadata must
+be regenerated after the installation, which can be achieved like so:
+
+.. code:: sh
+
+    $ pip install git+https://github.com/calmjs/calmjs.git#egg=calmjs
+
+Alternatively, the git repository can be cloned directly and execute
+``python setup.py develop`` while inside the root of the source
+directory.  Failure to do so will result in failure to install the
+development packages via |calmjs| from |npm|.  This failure can be
+verified by tests for this package failed to correctly execute, and the
+appearance of ``distribution option: 'package_json'`` warning message
+while installing this package.
+
+As |calmjs| is declared as both a namespace and a package, mixing
+installation methods as described above when installing with other
+|calmjs| packages may result in the module importer being unable to look
+up the target files.  If such an error does arise please remove all
+modules and only stick with a single installation method for all
+packages within the |calmjs| namespace.
 
 Installation of Node.js external dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -140,14 +184,19 @@ shells this may be executed instead from within that directory:
 
     $ CALMJS_TEST_ENV=. python -m unittest calmjs.dev.tests.make_suite
 
+Do note a number of failures during execution of Karma may appear; this
+is normal as these are tests that involve the simulation of failures to
+ensure proper error handling on real test failures.
+
 Usage
 -----
 
 The default tool is meant to provide an injectable runtime that sits
-before a |calmjs| toolchain runtime.  Currently, the standard way to use
-this package is to use it in conjunction of the |calmjs.rjs|_ package
-runtime.  For instance, one might execute the ``r.js`` tool through
-|calmjs.rjs| like:
+before a |calmjs| toolchain runtime that is responsible for the
+generation of deployable artifacts, such as AMD bundles through
+RequireJS.  Currently, the standard way to use this package is to use it
+in conjunction of the |calmjs.rjs|_ package runtime.  For instance, one
+might execute the ``r.js`` tool through |calmjs.rjs| like:
 
 .. code:: sh
 
@@ -197,7 +246,9 @@ this is necessary.  The full command may be like so:
 
 As with all |calmjs| tools, more help can be acquired by appending
 ``-h`` or ``--help`` to each of the runtime commands, i.e. ``calmjs
-karma -h`` or ``calmjs karma run -h``.
+karma -h`` or ``calmjs karma run -h``.  Replacing the ``-h`` flag with
+``-V`` will report the version information for the underlying packages
+associated with the respective runtime used.
 
 
 Troubleshooting
@@ -217,6 +268,20 @@ If the plugin shown inside the quote (starting with ``karma-``) is
 unnecessary for the execution of tests, it should be removed and the
 test command should be executed again.
 
+UserWarning: Unknown distribution option: 'package_json'
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Installation using the development method will show the above message if
+|calmjs| was not already installed into the current environment.  Please
+either reinstall, or regenerate the metadata by running:
+
+.. code:: sh
+
+    $ python setup.py egg_info
+
+In the root of the |calmjs.dev| source directory to ensure correct
+behavior of this package.
+
 
 Contribute
 ----------
@@ -224,7 +289,10 @@ Contribute
 - Issue Tracker: https://github.com/calmjs/calmjs.dev/issues
 - Source Code: https://github.com/calmjs/calmjs.dev
 
-License
--------
 
-|calmjs.dev| is licensed under the GPLv2 or later.
+Legal
+-----
+
+The Calmjs project is copyright (c) 2016 Auckland Bioengineering
+Institute, University of Auckland.  |calmjs.dev| is licensed under the
+terms of the GPLv2 or later.

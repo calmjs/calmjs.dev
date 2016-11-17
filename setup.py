@@ -34,7 +34,11 @@ package_json = {
 setup(
     name='calmjs.dev',
     version=version,
-    description="JavaScript development tools through the calmjs framework",
+    description=(
+        "Package for aiding the development of JavaScript code to be provided "
+        "as part of Python packages through integration with Node.js "
+        "development tools into a Python environment via the Calmjs framework."
+    ),
     long_description=long_description,
     classifiers=[
         "Programming Language :: Python",

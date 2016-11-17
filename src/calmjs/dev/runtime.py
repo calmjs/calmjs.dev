@@ -52,6 +52,7 @@ def init_argparser_common(argparser):
     argparser.add_argument(
         '--test-registry', default=[],
         dest=CALMJS_TEST_REGISTRY_NAMES, action=StoreDelimitedList,
+        metavar='REGISTRY[,REGISTRY...]',
         help='comma separated list of registries to use for gathering '
              'JavaScript tests from the Python packages specified via the '
              'toolchain runtime; default behavior is to auto-select, '
@@ -67,6 +68,7 @@ def init_argparser_common(argparser):
 
     argparser.add_argument(
         '--test-package', default=[],
+        metavar='PACKAGE[,PACKAGE...]',
         dest=TEST_PACKAGE_NAMES, action=StoreDelimitedList,
         help='comma separated list of Python packages to gather JavaScript '
              'tests from; this is an explicit list, no dependency resolution '
@@ -81,10 +83,12 @@ def init_argparser_common(argparser):
 
     argparser.add_argument(
         '--browser', default=[],
+        metavar='BROWSER[,BROWSER...]',
         dest=KARMA_BROWSERS, action=StoreDelimitedList,
-        help='comma separated list of browsers to use for testing; the must'
-             'be available within the current Node.js installation; '
-             'defaults to PhantomJS',
+        help='comma separated list of browsers to use for testing; the must '
+             'be available within the current Node.js installation; values '
+             'are case sensitive, refer to the documentation for the relevant '
+             'karma-*-launcher npm modules; defaults to PhantomJS',
     )
 
     argparser.add_argument(
@@ -102,6 +106,7 @@ def init_argparser_common(argparser):
     argparser.add_argument(
         '--cover-report-dir',
         dest=COVER_REPORT_DIR, action='store', default='coverage',
+        metavar='DIR',
         help="location to store the coverage report; "
              "defaults to 'coverage'",
     )
@@ -109,9 +114,11 @@ def init_argparser_common(argparser):
     argparser.add_argument(
         '--cover-report-file',
         dest=COVER_REPORT_FILE, action='store',
+        metavar='FILE',
         help="location to write the coverage report file for "
              "coverage types that write out to a single file; "
-             "defaults to unspecified",
+             "defaults to whatever default option for the specific "
+             "coverage report type",
     )
 
     argparser.add_argument(
@@ -124,12 +131,6 @@ def init_argparser_common(argparser):
         help="the type of coverage report to generate; "
              "defaults to '%s'; which is a custom multi "
              "configuration" % COVERAGE_TYPE_DEFAULT,
-    )
-
-    argparser.add_argument(
-        '--cover-bundle',
-        dest=COVER_BUNDLE, action='store_true',
-        help="include bundled sources for coverage report",
     )
 
     argparser.add_argument(
@@ -180,21 +181,18 @@ class TestToolchainRuntime(ToolchainRuntime):
         argparser.add_argument(
             '--artifact', default=None,
             dest=ARTIFACT_PATHS, action=StorePathSepDelimitedList,
-            help="a list of artifact files to test, separated by the '%s' "
-                 "character" % pathsep,
-        )
-
-        argparser.add_argument(
-            '--artifacts', default=None,
-            dest=ARTIFACT_PATHS, action=StorePathSepDelimitedList,
-            help=SUPPRESS,
+            metavar='FILE[%sFILE...]' % pathsep,
+            help="a list of artifact files to test; multiple paths to the "
+                 "files are to be separated by platform's path separation "
+                 "character '%s'" % pathsep,
         )
 
         argparser.add_argument(
             '--extra-frameworks', default=[],
             dest=KARMA_EXTRA_FRAMEWORKS, action=StoreDelimitedList,
-            help='comma separated list of extra frameworks that should be '
-                 'added into the karma configuration; the package for the '
+            metavar='FRAMEWORK[,FRAMEWORK...]',
+            help='comma separated list of extra frameworks to be added to '
+                 'the generated karma configuration; the package for the '
                  'framework must exist for the current Node.js installation',
         )
 
@@ -202,6 +200,7 @@ class TestToolchainRuntime(ToolchainRuntime):
             '-t', '--toolchain-package', default=None,
             required=False, dest=ADVICE_PACKAGES,
             action=StoreRequirementList, maxlen=1,
+            metavar='TOOLCHAIN_PACKAGE',
             help='the name of the package that supplied the original '
                  'toolchain that created the artifacts selected; extras may '
                  'be permitted, consult the documentation for that package '
@@ -214,6 +213,13 @@ class TestToolchainRuntime(ToolchainRuntime):
             '--cover-artifact',
             dest=COVER_ARTIFACT, action='store_true',
             help="include artifacts for coverage report",
+        )
+
+        argparser.add_argument(
+            dest=TEST_PACKAGE_NAMES, nargs='*', default=[],
+            metavar='PACKAGE',
+            help='Python package to gather JavaScript tests from; '
+                 'no package dependency resolution will be applied'
         )
 
         init_argparser_common(argparser)
@@ -284,13 +290,19 @@ class KarmaRuntime(Runtime, DriverRuntime):
     def init_argparser(self, argparser):
         super(KarmaRuntime, self).init_argparser(argparser)
 
+        init_argparser_common(argparser)
+
+        argparser.add_argument(
+            '--cover-bundle',
+            dest=COVER_BUNDLE, action='store_true',
+            help="include bundled sources for coverage report",
+        )
+
         argparser.add_argument(
             '-I', '--ignore-errors',
             dest=KARMA_ABORT_ON_TEST_FAILURE, action='store_false',
             help='do not abort execution on failure',
         )
-
-        init_argparser_common(argparser)
 
     def _update_spec_for_karma(self, spec, **kwargs):
         post_process_group = (

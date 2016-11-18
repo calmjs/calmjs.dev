@@ -529,6 +529,7 @@ class CliRuntimeTestCase(unittest.TestCase):
         self.addCleanup(cleanup)
 
         build_dir = mkdtemp(self)
+        coverage_dir = join(mkdtemp(self), 'coverage')
         # manipulate the registry to remove the fail test
         reg = root_registry.get('calmjs.dev.module.tests')
         reg.records['calmjs.dev.tests'].pop('calmjs/dev/tests/test_fail', '')
@@ -543,6 +544,7 @@ class CliRuntimeTestCase(unittest.TestCase):
             '--test-registry', 'calmjs.dev.module.tests',
             '--test-package', 'calmjs.dev',
             '--coverage', '--cover-artifact',
+            '--cover-report-dir', coverage_dir,
         ])
         self.assertIn('karma_config_path', result)
         self.assertTrue(exists(result['karma_config_path']))
@@ -550,6 +552,7 @@ class CliRuntimeTestCase(unittest.TestCase):
         self.assertNotIn(
             "karma exited with return code 1", sys.stderr.getvalue())
         self.assertIn(artifact, result['karma_config']['preprocessors'])
+        self.assertTrue(exists(coverage_dir))
 
     def test_karma_runtime_run_toolchain_package(self):
         def cleanup():

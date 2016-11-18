@@ -68,6 +68,9 @@ setup(
         'calmjs.runtime': [
             'karma = calmjs.dev.runtime:karma',
         ],
+        'calmjs.dev.runtime.karma': [
+            'run = calmjs.dev.runtime:run',
+        ],
     },
     test_suite="calmjs.dev.tests.make_suite",
 )

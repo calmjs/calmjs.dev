@@ -6,14 +6,11 @@ select the resulting spec targets for usage
 """
 
 import logging
+from itertools import chain
 from os.path import exists
 from os.path import pathsep
 from os.path import realpath
 from argparse import SUPPRESS
-
-from pkg_resources import EntryPoint
-from pkg_resources import Requirement
-from pkg_resources import working_set
 
 from calmjs.argparse import StoreDelimitedList
 from calmjs.argparse import StorePathSepDelimitedList
@@ -41,6 +38,8 @@ from calmjs.dev.karma import KARMA_BROWSERS
 from calmjs.dev.karma import KARMA_EXTRA_FRAMEWORKS
 
 logger = logging.getLogger(__name__)
+
+CALMJS_DEV_RUNTIME_KARMA = 'calmjs.dev.runtime.karma'
 
 __all__ = ['KarmaRuntime', 'karma']
 
@@ -254,8 +253,10 @@ class KarmaRuntime(Runtime, DriverRuntime):
 
     def __init__(
             self, cli_driver,
+            karma_entry_point_group=CALMJS_DEV_RUNTIME_KARMA,
             description='karma testrunner integration for calmjs',
             *a, **kw):
+        self.karma_entry_point_group = karma_entry_point_group
         super(KarmaRuntime, self).__init__(
             cli_driver=cli_driver, description=description, *a, **kw)
 
@@ -276,16 +277,11 @@ class KarmaRuntime(Runtime, DriverRuntime):
         return inst
 
     def iter_entry_points(self):
-        # just blatantly cheating right here
-        # TODO fix this mess, figure out if we want to cheat or actually
-        # provide a standard group.
-        ep = EntryPoint.parse('run = calmjs.dev.runtime:run')
-        ep.dist = working_set.find(Requirement.parse('calmjs.dev'))
-        yield ep
-
-        for entry_point in self.working_set.iter_entry_points(
-                self.entry_point_group):
-            yield entry_point
+        for ep in sorted(
+                chain(*tuple(map(self.working_set.iter_entry_points, (
+                    self.karma_entry_point_group, self.entry_point_group)))),
+                key=lambda ep: ep.name):
+            yield ep
 
     def init_argparser(self, argparser):
         super(KarmaRuntime, self).init_argparser(argparser)

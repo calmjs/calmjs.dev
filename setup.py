@@ -1,13 +1,28 @@
 from setuptools import setup
 from setuptools import find_packages
 
-version = '0.0'
+version = '1.0.0'
 
 long_description = (
     open('README.rst').read()
     + '\n' +
     open('CHANGES.rst').read()
     + '\n')
+
+classifiers = """
+Development Status :: 5 - Production/Stable
+Environment :: Console
+Framework :: Setuptools Plugin
+Intended Audience :: Developers
+License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)
+Operating System :: OS Independent
+Programming Language :: JavaScript
+Programming Language :: Python :: 2.7
+Programming Language :: Python :: 3.3
+Programming Language :: Python :: 3.4
+Programming Language :: Python :: 3.5
+Topic :: Software Development :: Testing
+""".strip().splitlines()
 
 package_json = {
     "devDependencies": {
@@ -40,9 +55,7 @@ setup(
         "development tools into a Python environment via the Calmjs framework."
     ),
     long_description=long_description,
-    classifiers=[
-        "Programming Language :: Python",
-    ],
+    classifiers=classifiers,
     keywords='',
     author='Tommy Yu',
     author_email='tommy.yu@auckland.ac.nz',

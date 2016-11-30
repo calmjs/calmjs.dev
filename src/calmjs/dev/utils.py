@@ -1,5 +1,26 @@
 # -*- coding: utf-8 -*-
+import os
 from itertools import chain
+
+
+# keys that are needed by various platforms for successful launching of
+# graphical browsers:
+
+_GUI_EXEC_KEYS = [
+    # due to broken karma-plugins implementation, HOME is a required
+    # environment variable (as often times they are joined with path
+    # fragments without checking if they are undefined).  Reference:
+    # <https://github.com/karma-runner/karma-firefox-launcher/pull/58>
+    'HOME',
+    # Linux and other posix based system with X11
+    'DISPLAY',
+    # Windows
+    'PROGRAMW6432', 'PROGRAMFILES(X86)', 'PROGRAMFILES',
+]
+
+
+def extract_gui_environ_keys(keys=_GUI_EXEC_KEYS):
+    return {key: os.environ[key] for key in keys if key in os.environ}
 
 
 def get_toolchain_targets_keys(

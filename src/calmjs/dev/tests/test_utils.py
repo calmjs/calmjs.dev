@@ -1,9 +1,36 @@
 # -*- coding: utf-8 -*-
 import unittest
+import os
 
 from calmjs.toolchain import Toolchain
 
 from calmjs.dev import utils
+
+from calmjs.testing.utils import stub_os_environ
+
+
+class ExtractGuiEnvironKeysTestCase(unittest.TestCase):
+
+    def test_base(self):
+        stub_os_environ(self)
+        os.environ.clear()
+        self.assertEqual(utils.extract_gui_environ_keys(), {})
+
+    def test_x11(self):
+        stub_os_environ(self)
+        os.environ.clear()
+        os.environ['DISPLAY'] = ':0'
+        self.assertEqual(utils.extract_gui_environ_keys(), {
+            'DISPLAY': ':0',
+        })
+
+    def test_win32(self):
+        stub_os_environ(self)
+        os.environ.clear()
+        os.environ['PROGRAMFILES'] = 'C:\\Program Files'
+        self.assertEqual(utils.extract_gui_environ_keys(), {
+            'PROGRAMFILES': 'C:\\Program Files',
+        })
 
 
 class ToolchainTargetsTestCase(unittest.TestCase):

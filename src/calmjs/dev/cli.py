@@ -4,7 +4,6 @@ This module provides interface to the karma cli runtime.
 """
 
 import logging
-import os
 import re
 from os.path import curdir
 from os.path import join
@@ -87,15 +86,7 @@ class KarmaDriver(NodeDriver):
         spec.handle(karma.BEFORE_KARMA)
 
         config_fn = join(spec[BUILD_DIR], self.karma_conf_js)
-        # due to broken karma-plugins implementation, HOME is a required
-        # environment variable (as often times they are joined with path
-        # fragments without checking if they are undefined).  Reference:
-        # <https://github.com/karma-runner/karma-firefox-launcher/pull/58>
-        call_kw = self._gen_call_kws(
-            HOME=os.environ.get('HOME', ''),
-            # need this on POSIX platform for visual browsers.
-            DISPLAY=os.environ.get('DISPLAY', ''),
-        )
+        call_kw = self._gen_call_kws(**utils.extract_gui_environ_keys())
         logger.info('invoking %s start %r', self.binary, config_fn)
         # TODO would be great if there is a way to "tee" the result into
         # both here and stdout.

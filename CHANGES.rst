@@ -1,6 +1,12 @@
 Changelog
 =========
 
+1.0.1 (2016-11-30)
+------------------
+
+- Correct the inability to launch standard graphical browsers directly
+  via the runner under Windows.
+
 1.0.0 (2016-11-18)
 ------------------
 

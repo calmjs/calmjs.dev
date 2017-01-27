@@ -19,10 +19,13 @@ COVER_REPORT_DIR = 'cover_report_dir'
 COVER_REPORT_FILE = 'cover_report_file'
 # flag for including coverage report for tests.
 COVER_TEST = 'cover_test'
+# test filename prefix
+TEST_FILENAME_PREFIX = 'test_filename_prefix'
 
 # values for some of the above keys
 COVERAGE_TYPE_DEFAULT = 'default'
 COVER_REPORT_DIR_DEFAULT = 'coverage'
+TEST_FILENAME_PREFIX_DEFAULT = 'test'
 
 
 class TestToolchain(Toolchain):

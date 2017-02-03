@@ -155,7 +155,7 @@ def init_argparser_common(argparser):
     )
 
     argparser.add_argument(
-        '--artifact', default=None,
+        '--artifact', default=[],
         dest=ARTIFACT_PATHS, action=StorePathSepDelimitedList,
         metavar='FILE[%sFILE...]' % pathsep,
         help="a list of artifact files to test; multiple paths to the "
@@ -244,10 +244,6 @@ class TestToolchainRuntime(ToolchainRuntime):
         Do nothing, as no export targets.
         """
 
-    def kwargs_to_spec(self, **kwargs):
-        spec = super(TestToolchainRuntime, self).kwargs_to_spec(**kwargs)
-        return spec
-
 
 class KarmaRuntime(Runtime, DriverRuntime):
     """
@@ -304,9 +300,11 @@ class KarmaRuntime(Runtime, DriverRuntime):
         )
 
     def _update_spec_for_karma(self, spec, **kwargs):
+        # This method assigns default values of the specific type to
+        # the spec.  Ensure they are added correctly.
         post_process_group = (
+            # default value, and keys to be assigned that
             (None, [
-                ARTIFACT_PATHS,
                 KARMA_ABORT_ON_TEST_FAILURE,
                 COVERAGE_ENABLE,
                 COVER_REPORT_DIR,
@@ -316,7 +314,9 @@ class KarmaRuntime(Runtime, DriverRuntime):
                 COVER_BUNDLE,
                 COVER_TEST,
             ]),
+            # For all list types.
             ([], [
+                ARTIFACT_PATHS,
                 CALMJS_TEST_REGISTRY_NAMES,
                 TEST_PACKAGE_NAMES,
                 KARMA_BROWSERS,
@@ -326,7 +326,7 @@ class KarmaRuntime(Runtime, DriverRuntime):
         for defaultvalue, post_process in post_process_group:
             for key in post_process:
                 if kwargs.get(key, defaultvalue) != defaultvalue:
-                    spec[key] = kwargs.get(key, defaultvalue)
+                    spec[key] = kwargs[key]
                 else:
                     # pop them out from spec
                     spec.pop(key, None)

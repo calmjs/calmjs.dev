@@ -113,6 +113,24 @@ class BaseRuntimeTestCase(unittest.TestCase):
             'test_package_names': ['default'],
         })
 
+    def test_update_spec_for_karma_type_check(self):
+        driver = KarmaDriver()
+        runtime = KarmaRuntime(driver)
+        spec = Spec()
+        runtime._update_spec_for_karma(spec, artifact_paths=['artifact.js'])
+        # values not provided via kwargs will be disappeared.
+        self.assertEqual(dict(spec), {
+            'artifact_paths': ['artifact.js'],
+        })
+
+    def test_update_spec_for_karma_default_value_dropped(self):
+        driver = KarmaDriver()
+        runtime = KarmaRuntime(driver)
+        spec = Spec()
+        runtime._update_spec_for_karma(spec, artifact_paths=[])
+        # values not provided via kwargs will be disappeared.
+        self.assertEqual(dict(spec), {})
+
     def test_command_stacking(self):
 
         def cleanup():
@@ -176,6 +194,7 @@ class BaseRuntimeTestCase(unittest.TestCase):
             '--extra-frameworks', 'my_framework',
             '--browser', 'Chromium,Firefox',
         ])
+        self.assertEqual(result['artifact_paths'], [artifact])
         self.assertTrue(exists(result['karma_config_path']))
         self.assertIn('karma_config_path', result)
         self.assertIn('my_framework', result['karma_config']['frameworks'])
@@ -554,6 +573,7 @@ class CliRuntimeTestCase(unittest.TestCase):
         ])
         self.assertIn('karma_config_path', result)
         self.assertTrue(exists(result['karma_config_path']))
+        self.assertEqual(result['artifact_paths'], [artifact])
         # should exit cleanly
         self.assertNotIn(
             "karma exited with return code 1", sys.stderr.getvalue())
@@ -591,6 +611,7 @@ class CliRuntimeTestCase(unittest.TestCase):
             '--cover-report-dir', coverage_dir,
         ])
         self.assertIn('karma_config_path', result)
+        self.assertEqual(result['artifact_paths'], [artifact])
         self.assertTrue(exists(result['karma_config_path']))
         # should exit cleanly
         self.assertNotIn(
@@ -633,6 +654,7 @@ class CliRuntimeTestCase(unittest.TestCase):
             '--toolchain-package', 'example.package',
         ])
         self.assertIn('karma_config_path', result)
+        self.assertEqual(result['artifact_paths'], [artifact])
         # the spec key is written.
         self.assertEqual(result['dummy'], ['dummy'])
 
@@ -688,6 +710,7 @@ class CliRuntimeTestCase(unittest.TestCase):
         ])
         self.assertIn('calmjs.dev', _called)
         self.assertIn('karma_config_path', result)
+        self.assertEqual(result['artifact_paths'], [artifact])
         # the spec key is written.
         self.assertEqual(result['dummy'], ['dummy'])
         self.assertEqual(

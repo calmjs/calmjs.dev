@@ -250,6 +250,33 @@ karma -h`` or ``calmjs karma run -h``.  Replacing the ``-h`` flag with
 ``-V`` will report the version information for the underlying packages
 associated with the respective runtime used.
 
+More on testing in conjunction with artifacts
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``--artifact`` flag can also be specified directly on the ``karma``
+runner; this has the consequence of enabling the testing of limited or
+explicitly mapped JavaScript sources exported by specific Python
+modules.  What this means is that instead of building and testing all
+the dependency modules along with a given module, all those dependencies
+can be applied to the test environment as a separate, complete artifact.
+This has the effect of removing the dependency sources from the build
+directory such that coverage report no longer shows up, with the bonus
+of also testing the artifact whether or not the it is compatible with
+the sources being tested.  An example with the ``nunja.stock`` package
+which requires ``nunja``:
+
+.. code:: sh
+
+    $ calmjs rjs nunja
+    $ calmjs karma --cover-artifact --artifact=nunja.js --coverage \
+        --cover-test rjs nunja.stock --source-map-method=explicit
+
+The first command produces the artifact file ``nunja.js``, which is then
+immediately used by the subsequent command which explicitly filters out
+all other sources not specified.  Otherwise, the standard way is that
+the dependencies will also be included into the test and the resulting
+artifact file.
+
 
 Troubleshooting
 ---------------

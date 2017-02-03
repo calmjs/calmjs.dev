@@ -1,6 +1,13 @@
 Changelog
 =========
 
+1.0.3 (Unreleased)
+------------------
+
+- Move the ``--artifact`` and ``--cover-artifact`` flag up to the main
+  ``karma`` runtime to permit wider and more flexible usage for all
+  runners.
+
 1.0.2 (2017-01-27)
 ------------------
 

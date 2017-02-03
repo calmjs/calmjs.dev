@@ -44,6 +44,22 @@ CALMJS_DEV_RUNTIME_KARMA = 'calmjs.dev.runtime.karma'
 __all__ = ['KarmaRuntime', 'karma']
 
 
+def prepare_spec_artifacts(spec):
+
+    def checkpaths(paths):
+        for p in paths:
+            realp = realpath(p)
+            if not exists(realp):
+                logger.warning("specified artifact '%s' does not exists")
+                continue
+            yield realp
+
+    # do not sort this list, it is provided with a specific order
+    if spec.get(ARTIFACT_PATHS):
+        # do this to conform to usage for artifact_paths in spec.
+        spec[ARTIFACT_PATHS] = list(checkpaths(spec.get(ARTIFACT_PATHS)))
+
+
 def init_argparser_common(argparser):
 
     # default values as empty lists to not override existing values.
@@ -138,6 +154,21 @@ def init_argparser_common(argparser):
         help="include test sources for coverage report",
     )
 
+    argparser.add_argument(
+        '--artifact', default=None,
+        dest=ARTIFACT_PATHS, action=StorePathSepDelimitedList,
+        metavar='FILE[%sFILE...]' % pathsep,
+        help="a list of artifact files to test; multiple paths to the "
+             "files are to be separated by platform's path separation "
+             "character '%s'" % pathsep,
+    )
+
+    argparser.add_argument(
+        '--cover-artifact',
+        dest=COVER_ARTIFACT, action='store_true',
+        help="include artifacts for coverage report",
+    )
+
 
 class TestToolchainRuntime(ToolchainRuntime):
     """
@@ -178,15 +209,6 @@ class TestToolchainRuntime(ToolchainRuntime):
         super(TestToolchainRuntime, self).init_argparser(argparser)
 
         argparser.add_argument(
-            '--artifact', default=None,
-            dest=ARTIFACT_PATHS, action=StorePathSepDelimitedList,
-            metavar='FILE[%sFILE...]' % pathsep,
-            help="a list of artifact files to test; multiple paths to the "
-                 "files are to be separated by platform's path separation "
-                 "character '%s'" % pathsep,
-        )
-
-        argparser.add_argument(
             '--extra-frameworks', default=[],
             dest=KARMA_EXTRA_FRAMEWORKS, action=StoreDelimitedList,
             metavar='FRAMEWORK[,FRAMEWORK...]',
@@ -209,12 +231,6 @@ class TestToolchainRuntime(ToolchainRuntime):
         )
 
         argparser.add_argument(
-            '--cover-artifact',
-            dest=COVER_ARTIFACT, action='store_true',
-            help="include artifacts for coverage report",
-        )
-
-        argparser.add_argument(
             dest=TEST_PACKAGE_NAMES, nargs='*', default=[],
             metavar='PACKAGE',
             help='Python package to gather JavaScript tests from; '
@@ -229,20 +245,7 @@ class TestToolchainRuntime(ToolchainRuntime):
         """
 
     def kwargs_to_spec(self, **kwargs):
-        def checkpaths(paths):
-            for p in paths:
-                realp = realpath(p)
-                if not exists(realp):
-                    logger.warning("specified artifact '%s' does not exists")
-                    continue
-                yield realp
-
         spec = super(TestToolchainRuntime, self).kwargs_to_spec(**kwargs)
-        # do not sort this list, it is provided with a specific order
-        if spec.get(ARTIFACT_PATHS):
-            # do this to conform to usage for artifact_paths in spec.
-            spec[ARTIFACT_PATHS] = list(
-                checkpaths(spec.get(ARTIFACT_PATHS)))
         return spec
 
 
@@ -303,6 +306,7 @@ class KarmaRuntime(Runtime, DriverRuntime):
     def _update_spec_for_karma(self, spec, **kwargs):
         post_process_group = (
             (None, [
+                ARTIFACT_PATHS,
                 KARMA_ABORT_ON_TEST_FAILURE,
                 COVERAGE_ENABLE,
                 COVER_REPORT_DIR,
@@ -329,10 +333,13 @@ class KarmaRuntime(Runtime, DriverRuntime):
 
     def _prepare_spec_from_runtime(self, runtime, **kwargs):
         spec = runtime.kwargs_to_spec(**kwargs)
+
         # The above runtime specific method MAY strip off all keys that
         # it doesn't understand; so for the critical keys that the karma
         # runtime require/supply, plug them back in like so:
         self._update_spec_for_karma(spec, **kwargs)
+        prepare_spec_artifacts(spec)
+
         return spec
 
     def _run_runtime(self, runtime, **kwargs):

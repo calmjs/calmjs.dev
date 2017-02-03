@@ -24,12 +24,14 @@ from calmjs.utils import pretty_logging
 from calmjs.dev import cli
 from calmjs.dev.cli import KarmaDriver
 from calmjs.dev.toolchain import TestToolchain
+from calmjs.dev.runtime import prepare_spec_artifacts
 from calmjs.dev.runtime import KarmaRuntime
 from calmjs.dev.runtime import TestToolchainRuntime
 
 from calmjs.testing import mocks
 from calmjs.testing.utils import make_dummy_dist
 from calmjs.testing.utils import mkdtemp
+from calmjs.testing.utils import remember_cwd
 from calmjs.testing.utils import rmtree
 from calmjs.testing.utils import setup_class_install_environment
 from calmjs.testing.utils import stub_base_which
@@ -47,13 +49,25 @@ class TestToolchainRuntimeTestCase(unittest.TestCase):
         spec = rt.kwargs_to_spec()
         self.assertTrue(isinstance(spec, Spec))
 
-    def test_kwargs_to_spec_artifacts(self):
-        fake = join(mkdtemp(self), 'fake.js')
-        rt = TestToolchainRuntime(TestToolchain())
+    def test_prepare_spec_artifacts(self):
+        remember_cwd(self)
+        tmpdir = mkdtemp(self)
+        fake = join(tmpdir, 'fake.js')
+        real = join(tmpdir, 'real.js')
+
+        os.chdir(tmpdir)
+
+        with open(real, 'w') as fd:
+            fd.write('')
+
         with pretty_logging(
                 logger='calmjs.dev', stream=mocks.StringIO()) as log:
-            spec = rt.kwargs_to_spec(artifact_paths=[fake])
-        self.assertEqual(spec['artifact_paths'], [])
+            # note the relative paths
+            spec = Spec(artifact_paths=['real.js', 'fake.js'])
+            prepare_spec_artifacts(spec)
+
+        # note that the full path is now specified.
+        self.assertEqual(spec['artifact_paths'], [real])
         self.assertIn('does not exists', log.getvalue())
 
 

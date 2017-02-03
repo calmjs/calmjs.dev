@@ -70,6 +70,36 @@ class TestToolchainRuntimeTestCase(unittest.TestCase):
         self.assertEqual(spec['artifact_paths'], [real])
         self.assertIn('does not exists', log.getvalue())
 
+        # should still work with full paths.
+        spec = Spec(artifact_paths=[real, fake])
+        prepare_spec_artifacts(spec)
+        self.assertEqual(spec['artifact_paths'], [real])
+
+    def test_prepare_spec_artifacts_order(self):
+        remember_cwd(self)
+        tmpdir = mkdtemp(self)
+        os.chdir(tmpdir)
+
+        def touch(fn):
+            with open(fn, 'w'):
+                pass
+            return fn
+
+        names = ['art1.js', 'art2.js', 'art3.js']
+        paths = [touch(join(tmpdir, n)) for n in names]
+
+        spec = Spec(artifact_paths=names)
+        prepare_spec_artifacts(spec)
+        self.assertEqual(spec['artifact_paths'], paths)
+
+        spec = Spec(artifact_paths=['art2.js', 'art1.js', 'art3.js'])
+        prepare_spec_artifacts(spec)
+        self.assertEqual(spec['artifact_paths'], [
+            join(tmpdir, 'art2.js'),
+            join(tmpdir, 'art1.js'),
+            join(tmpdir, 'art3.js'),
+        ])
+
 
 class BaseRuntimeTestCase(unittest.TestCase):
 
@@ -553,7 +583,7 @@ class CliRuntimeTestCase(unittest.TestCase):
         # the artifact in our case is identical to the source file
         artifact = resource_filename('calmjs.dev', 'main.js')
         result = rt([
-            'run', '--artifact', artifact,
+            '--artifact', artifact, 'run',
             '--build-dir', build_dir,
             '--test-registry', 'calmjs.dev.module.tests',
             '--test-package', 'calmjs.dev',
@@ -597,7 +627,7 @@ class CliRuntimeTestCase(unittest.TestCase):
         # the artifact in our case is identical to the source file
         artifact = resource_filename('calmjs.dev', 'main.js')
         result = rt([
-            'run', '--artifact', artifact,
+            '--artifact', artifact, 'run',
             '--test-registry', 'calmjs.dev.module.tests',
             '--test-package', 'calmjs.dev',
             '--toolchain-package', 'example.package',

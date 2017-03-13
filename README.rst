@@ -284,6 +284,28 @@ Troubleshooting
 The following may be some issues that may be encountered with standard
 or typical usage of |calmjs.dev|.
 
+Error: No provider for "framework:mocha"! (Resolving: framework:mocha)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The most likely cause of this error is that the |npm| dependencies
+specified for this package is not available for the current Node.js
+environment.  Please ensure that is installed before trying again.  One
+method is to prepend |calmjs.dev| to the ``calmjs npm`` install command,
+e.g:
+
+.. code:: sh
+
+    $ calmjs npm --install calmjs.dev ...
+
+Alternatively, package developers can have extras that requires this
+package, and instruct downstream users interested in the development of
+that package to install and use the package with that extras flag
+enabled.  For instance, ``nunja`` has the support for that:
+
+.. code:: sh
+
+    $ calmjs npm --install nunja[dev]
+
 ERROR [plugin]: "karma-..." plugin: ...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

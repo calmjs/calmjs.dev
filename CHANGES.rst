@@ -1,12 +1,13 @@
 Changelog
 =========
 
-1.0.3 (Unreleased)
+1.0.3 (2017-05-22)
 ------------------
 
 - Move the ``--artifact`` and ``--cover-artifact`` flag up to the main
   ``karma`` runtime to permit wider and more flexible usage for all
   runners.
+- Correctly report the path of missing specified artifacts in the logs.
 
 1.0.2 (2017-01-27)
 ------------------

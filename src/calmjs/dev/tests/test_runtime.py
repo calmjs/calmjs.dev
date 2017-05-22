@@ -50,6 +50,7 @@ class TestToolchainRuntimeTestCase(unittest.TestCase):
         self.assertTrue(isinstance(spec, Spec))
 
     def test_prepare_spec_artifacts(self):
+        stub_stdouts(self)
         remember_cwd(self)
         tmpdir = mkdtemp(self)
         fake = join(tmpdir, 'fake.js')
@@ -69,6 +70,7 @@ class TestToolchainRuntimeTestCase(unittest.TestCase):
         # note that the full path is now specified.
         self.assertEqual(spec['artifact_paths'], [real])
         self.assertIn('does not exists', log.getvalue())
+        self.assertIn(fake, log.getvalue())
 
         # should still work with full paths.
         spec = Spec(artifact_paths=[real, fake])

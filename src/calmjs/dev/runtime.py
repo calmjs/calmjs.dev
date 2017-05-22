@@ -50,7 +50,8 @@ def prepare_spec_artifacts(spec):
         for p in paths:
             realp = realpath(p)
             if not exists(realp):
-                logger.warning("specified artifact '%s' does not exists")
+                logger.warning(
+                    "specified artifact '%s' does not exists", realp)
                 continue
             yield realp
 

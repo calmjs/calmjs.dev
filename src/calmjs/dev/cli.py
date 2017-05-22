@@ -195,9 +195,24 @@ class KarmaDriver(NodeDriver):
 
         # finally, modify the config
         config['reporters'] = list(config['reporters']) + ['coverage']
-        config['preprocessors'] = {
-            path: 'coverage' for path in paths if self._valid_cover_file(path)}
+        self._apply_preprocessors_config(config, {
+            path: ['coverage']
+            for path in paths if self._valid_cover_file(path)
+        })
         config['coverageReporter'] = coverage_reporter
+
+    def _apply_preprocessors_config(self, config, new_preprocessors):
+        original = config['preprocessors'] = config.get('preprocessors', {})
+        for key in new_preprocessors:
+            preprocessor = original.get(key, [])
+            if not isinstance(preprocessor, list):
+                preprocessor = [preprocessor]
+            original[key] = preprocessor
+
+            if isinstance(new_preprocessors[key], list):
+                preprocessor.extend(new_preprocessors[key])
+            else:
+                preprocessor.append(new_preprocessors[key])
 
     def _create_config(self, spec, spec_keys):
         package_names = self._pick_spec_keys(

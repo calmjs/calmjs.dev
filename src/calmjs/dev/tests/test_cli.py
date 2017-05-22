@@ -70,6 +70,58 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
         )[0])
         self.assertTrue(isinstance(result, dict))
 
+    def test_apply_preprocessors_config_null(self):
+        driver = cli.KarmaDriver()
+        config = {}
+        driver._apply_preprocessors_config(config, {})
+        self.assertEqual(config['preprocessors'], {})
+
+    def test_apply_preprocessors_config_identity(self):
+        driver = cli.KarmaDriver()
+        preprocessors = {
+            'some/**/*.js': ['something'],
+        }
+        config = {'preprocessors': preprocessors}
+        driver._apply_preprocessors_config(config, {})
+        self.assertIs(config['preprocessors'], preprocessors)
+
+    def test_apply_preprocessors_config_new(self):
+        driver = cli.KarmaDriver()
+        config = {'preprocessors': {
+            'some/**/*.js': ['something'],
+        }}
+        driver._apply_preprocessors_config(config, {'foo.js': ['other']})
+        self.assertEqual(config['preprocessors'], {
+            'some/**/*.js': ['something'],
+            'foo.js': ['other'],
+        })
+
+    def test_apply_preprocessors_config_overlap(self):
+        driver = cli.KarmaDriver()
+        config = {'preprocessors': {
+            'some/**/*.js': ['something'],
+        }}
+        driver._apply_preprocessors_config(config, {'some/**/*.js': ['other']})
+        self.assertEqual(config['preprocessors'], {
+            'some/**/*.js': ['something', 'other'],
+        })
+
+    def test_apply_preprocessors_config_correction(self):
+        driver = cli.KarmaDriver()
+        config = {'preprocessors': {
+            'other.js': 'something',
+            'some/**/*.js': 'something',
+        }}
+        driver._apply_preprocessors_config(config, {
+            'some/**/*.js': ['other'],
+            'need/**/*.js': 'fix',
+        })
+        self.assertEqual(config['preprocessors'], {
+            'other.js': 'something',
+            'some/**/*.js': ['something', 'other'],
+            'need/**/*.js': ['fix'],
+        })
+
     def test_advices(self):
         stub_base_which(self)
         stub_mod_call(self, cli)

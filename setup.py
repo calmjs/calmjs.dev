@@ -40,6 +40,7 @@ package_json = {
         "karma-phantomjs-launcher": "~1.0.2",
         "karma-sinon": "~1.0.5",
         "karma-spec-reporter": "~0.0.26",
+        "karma-wrap-preprocessor": "~0.1.0",
         "mocha": "~3.1.2",
         "phantomjs-prebuilt": "~2.1.0",
         "sinon": "~1.17.4"

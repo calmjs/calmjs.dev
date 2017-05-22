@@ -1,6 +1,14 @@
 Changelog
 =========
 
+1.1.0 (Unreleased)
+------------------
+
+- Tests are now automatically wrapped by a default template when served
+  by karma to better limit the scope of the variables defined within
+  each file.  This can be disabled using ``--no-wrap-tests`` flag on the
+  ``karma`` runtime.
+
 1.0.3 (2017-05-22)
 ------------------
 

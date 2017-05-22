@@ -44,6 +44,9 @@ from calmjs.dev.toolchain import COVER_TEST
 
 from calmjs.dev.toolchain import COVERAGE_TYPE_DEFAULT
 from calmjs.dev.toolchain import COVER_REPORT_DIR_DEFAULT
+from calmjs.dev.toolchain import NO_WRAP_TESTS
+from calmjs.dev.toolchain import TEST_FILENAME_PREFIX
+from calmjs.dev.toolchain import TEST_FILENAME_PREFIX_DEFAULT
 
 logger = logging.getLogger(__name__)
 
@@ -201,6 +204,22 @@ class KarmaDriver(NodeDriver):
         })
         config['coverageReporter'] = coverage_reporter
 
+    def _valid_wrap_test_file(self, spec, path):
+        return re.search(r'%s[^\\\/]*js$' % spec.get(
+            TEST_FILENAME_PREFIX, TEST_FILENAME_PREFIX_DEFAULT), path)
+
+    def _apply_wrap_tests(self, spec, config, test_module_paths):
+        if spec.get(NO_WRAP_TESTS):
+            return
+        self._apply_preprocessors_config(config, {
+            path: ['wrap']
+            for path in test_module_paths
+            if self._valid_wrap_test_file(spec, path)
+        })
+        config['wrapPreprocessor'] = {
+            "template": "(function () { <%= contents %> })()",
+        }
+
     def _apply_preprocessors_config(self, config, new_preprocessors):
         original = config['preprocessors'] = config.get('preprocessors', {})
         for key in new_preprocessors:
@@ -247,6 +266,8 @@ class KarmaDriver(NodeDriver):
 
         config['files'] = files + test_module_paths
         self._apply_coverage_config(spec, config, files, test_module_paths)
+        self._apply_wrap_tests(spec, config, test_module_paths)
+
         return config
 
     def create_config(self, spec):

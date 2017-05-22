@@ -162,6 +162,27 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
         driver.create_config(spec)
         self.assertEqual(spec['karma_config']['files'], [])
 
+    def test_apply_wrap_tests(self):
+        driver = cli.KarmaDriver()
+        spec = Spec(
+            no_wrap_tests=False,
+        )
+
+        config = {}
+        test_module_path = [
+            'some/path/testTemplate.tmpl',
+            'some/path/testModule.js',
+            'some/path/module.js',
+            'test/path/file.js',
+        ]
+
+        driver._apply_wrap_tests(spec, config, test_module_path)
+        self.assertEqual(config, {
+            'preprocessors': {'some/path/testModule.js': ['wrap']},
+            'wrapPreprocessor': {
+                'template': '(function () { <%= contents %> })()'},
+        })
+
     def test_create_config_source_specified_no_explicit_tests(self):
         # this is usually provided by the toolchains themselves
         spec = Spec(
@@ -222,7 +243,7 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             log.getvalue(),
         )
 
-    def test_create_config_with_coverage_standard(self):
+    def test_create_config_with_coverage_standard_no_wrap(self):
         # this is usually provided by the toolchains themselves
         spec = Spec(
             test_package_names=['calmjs.dev'],
@@ -236,6 +257,7 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             },
             karma_spec_keys=['bundled_targets', 'transpiled_targets'],
             coverage_enable=True,
+            no_wrap_tests=True,
         )
         driver = cli.KarmaDriver()
         driver.create_config(spec)
@@ -256,6 +278,74 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
         self.assertEqual(
             len(spec['karma_config']['coverageReporter']['reporters']), 4)
 
+    def test_create_config_with_coverage_standard(self):
+        # this is usually provided by the toolchains themselves
+        spec = Spec(
+            test_package_names=['calmjs.dev'],
+            source_package_names=['calmjs.dev'],
+            calmjs_test_registry_names=['calmjs.dev.module.tests'],
+            calmjs_module_registry_names=['calmjs.dev.module'],
+            bundled_targets={'jquery': 'jquery.js'},
+            # provide the other bits that normally get set up earlier.
+            transpiled_targets={
+                'calmjs/dev/main': 'calmjs/dev/main.js',
+            },
+            karma_spec_keys=['bundled_targets', 'transpiled_targets'],
+            coverage_enable=True,
+            no_wrap_tests=False,
+        )
+        driver = cli.KarmaDriver()
+        driver.create_config(spec)
+
+        self.assertIn('coverage', spec['karma_config']['reporters'])
+        preprocessors = spec['karma_config']['preprocessors']
+        target = [k for k in preprocessors if basename(k) == 'test_fail.js'][0]
+        self.assertEqual(preprocessors[target], ['wrap'])
+        self.assertNotIn('jquery.js', spec['karma_config']['preprocessors'])
+        self.assertIn('calmjs/dev/main.js', spec['karma_config']['files'])
+        self.assertIn(
+            'calmjs/dev/main.js', spec['karma_config']['preprocessors'])
+        self.assertEqual(
+            spec['karma_config']['coverageReporter']['dir'],
+            realpath('coverage'),
+        )
+        # default specifies three different reporters.
+        self.assertEqual(
+            len(spec['karma_config']['coverageReporter']['reporters']), 4)
+
+    def test_create_config_with_coverage_standard_specified_no_wrap(self):
+        # this is usually provided by the toolchains themselves
+        spec = Spec(
+            test_package_names=['calmjs.dev'],
+            source_package_names=['calmjs.dev'],
+            calmjs_test_registry_names=['calmjs.dev.module.tests'],
+            calmjs_module_registry_names=['calmjs.dev.module'],
+            bundled_targets={'jquery': 'jquery.js'},
+            # provide the other bits that normally get set up earlier.
+            transpiled_targets={
+                'calmjs/dev/main': 'calmjs/dev/main.js',
+            },
+            karma_spec_keys=['bundled_targets', 'transpiled_targets'],
+            coverage_enable=True,
+            coverage_type='lcov',
+            no_wrap_tests=True,
+        )
+        driver = cli.KarmaDriver()
+        driver.create_config(spec)
+
+        self.assertIn('coverage', spec['karma_config']['reporters'])
+        self.assertNotIn('test_fail.js', [
+            basename(k) for k in spec['karma_config']['preprocessors']
+        ])
+        self.assertNotIn('jquery.js', spec['karma_config']['preprocessors'])
+        self.assertIn('calmjs/dev/main.js', spec['karma_config']['files'])
+        self.assertIn(
+            'calmjs/dev/main.js', spec['karma_config']['preprocessors'])
+        self.assertEqual(spec['karma_config']['coverageReporter'], {
+            'type': 'lcov',
+            'dir': realpath('coverage'),
+        })
+
     def test_create_config_with_coverage_standard_specified(self):
         # this is usually provided by the toolchains themselves
         spec = Spec(
@@ -271,14 +361,15 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             karma_spec_keys=['bundled_targets', 'transpiled_targets'],
             coverage_enable=True,
             coverage_type='lcov',
+            no_wrap_tests=False,
         )
         driver = cli.KarmaDriver()
         driver.create_config(spec)
 
         self.assertIn('coverage', spec['karma_config']['reporters'])
-        self.assertNotIn('test_fail.js', [
-            basename(k) for k in spec['karma_config']['preprocessors']
-        ])
+        preprocessors = spec['karma_config']['preprocessors']
+        target = [k for k in preprocessors if basename(k) == 'test_fail.js'][0]
+        self.assertEqual(preprocessors[target], ['wrap'])
         self.assertNotIn('jquery.js', spec['karma_config']['preprocessors'])
         self.assertIn('calmjs/dev/main.js', spec['karma_config']['files'])
         self.assertIn(
@@ -312,14 +403,15 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             cover_bundle=True,
             cover_test=True,
             coverage_type='lcov',
+            no_wrap_tests=False,
         )
         driver = cli.KarmaDriver()
         driver.create_config(spec)
 
         self.assertIn('coverage', spec['karma_config']['reporters'])
-        self.assertIn('test_fail.js', [
-            basename(k) for k in spec['karma_config']['preprocessors']
-        ])
+        preprocessors = spec['karma_config']['preprocessors']
+        target = [k for k in preprocessors if basename(k) == 'test_fail.js'][0]
+        self.assertEqual(preprocessors[target], ['coverage', 'wrap'])
         self.assertIn('jquery.js', spec['karma_config']['preprocessors'])
         self.assertIn('calmjs/dev/main.js', spec['karma_config']['files'])
         self.assertIn(

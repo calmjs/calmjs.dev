@@ -33,6 +33,7 @@ from calmjs.dev.toolchain import COVER_BUNDLE
 from calmjs.dev.toolchain import COVER_REPORT_DIR
 from calmjs.dev.toolchain import COVER_REPORT_FILE
 from calmjs.dev.toolchain import COVER_TEST
+from calmjs.dev.toolchain import NO_WRAP_TESTS
 from calmjs.dev.karma import KARMA_ABORT_ON_TEST_FAILURE
 from calmjs.dev.karma import KARMA_BROWSERS
 from calmjs.dev.karma import KARMA_EXTRA_FRAMEWORKS
@@ -168,6 +169,19 @@ def init_argparser_common(argparser):
         '--cover-artifact',
         dest=COVER_ARTIFACT, action='store_true',
         help="include artifacts for coverage report",
+    )
+
+    argparser.add_argument(
+        '--no-wrap-tests', '--disable-wrap-tests',
+        dest=NO_WRAP_TESTS, action='store_true',
+        help="do not wrap tests with a function closure",
+    )
+
+    argparser.add_argument(
+        '--wrap-tests', '--enable-wrap-tests',
+        dest=NO_WRAP_TESTS, action='store_false',
+        # help="tests with a function closure",
+        help=SUPPRESS,
     )
 
 
@@ -314,6 +328,7 @@ class KarmaRuntime(Runtime, DriverRuntime):
                 COVER_ARTIFACT,
                 COVER_BUNDLE,
                 COVER_TEST,
+                NO_WRAP_TESTS,
             ]),
             # For all list types.
             ([], [

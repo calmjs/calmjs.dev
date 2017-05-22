@@ -19,6 +19,8 @@ COVER_REPORT_DIR = 'cover_report_dir'
 COVER_REPORT_FILE = 'cover_report_file'
 # flag for including coverage report for tests.
 COVER_TEST = 'cover_test'
+# no wrap tests with a function closure
+NO_WRAP_TESTS = 'no_wrap_tests'
 # test filename prefix
 TEST_FILENAME_PREFIX = 'test_filename_prefix'
 

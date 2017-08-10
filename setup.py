@@ -1,7 +1,7 @@
 from setuptools import setup
 from setuptools import find_packages
 
-version = '1.1.0'
+version = '2.0.0'
 
 long_description = (
     open('README.rst').read()
@@ -69,7 +69,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'calmjs>=2.0.0,<3',
+        'calmjs>=3.0.0dev,<4',
     ],
     package_json=package_json,
     entry_points={

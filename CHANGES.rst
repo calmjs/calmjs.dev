@@ -1,7 +1,7 @@
 Changelog
 =========
 
-1.1.0 (Unreleased)
+1.1.0 (2017-08-10)
 ------------------
 
 - Tests are now automatically wrapped by a default template when served

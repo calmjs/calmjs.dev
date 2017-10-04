@@ -29,7 +29,7 @@ def get_toolchain_targets_keys(
     Derive the keys that a toolchain instance will assign to Spec
     instances that are passed into it for the paths that it wrote to the
     build directory.  This will be acquired from the ``compile_entries``
-    attribute and be joined with its ``target_suffix`` attribute.
+    attribute and be joined with its ``targetpath_suffix`` attribute.
 
     Get the write_keys assigned to a given instance of
 
@@ -48,7 +48,7 @@ def get_toolchain_targets_keys(
 
     all_pfx = (entry[2] for entry in toolchain.compile_entries)
     return (
-        (p + toolchain.target_suffix) for p in (
+        (p + toolchain.targetpath_suffix) for p in (
             include_targets_from if include_targets_from else all_pfx)
         if p not in exclude_targets_from
     )

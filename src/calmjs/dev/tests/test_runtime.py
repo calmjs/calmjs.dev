@@ -259,7 +259,7 @@ class CliRuntimeTestCase(unittest.TestCase):
         test_main = resource_filename('calmjs.dev.tests', 'test_main.js')
         spec = Spec(
             # null toolchain does not prepare this
-            transpile_source_map={
+            transpile_sourcepath={
                 'calmjs/dev/main': main,
             },
             test_module_paths_map={
@@ -277,7 +277,7 @@ class CliRuntimeTestCase(unittest.TestCase):
         test_fail = resource_filename('calmjs.dev.tests', 'test_fail.js')
         spec = Spec(
             # null toolchain does not prepare this
-            transpile_source_map={
+            transpile_sourcepath={
                 'calmjs/dev/main': main,
             },
             test_module_paths_map={
@@ -299,7 +299,7 @@ class CliRuntimeTestCase(unittest.TestCase):
         test_fail = resource_filename('calmjs.dev.tests', 'test_fail.js')
         spec = Spec(
             # null toolchain does not prepare this
-            transpile_source_map={
+            transpile_sourcepath={
                 'calmjs/dev/main': main,
             },
             test_module_paths_map={
@@ -326,7 +326,7 @@ class CliRuntimeTestCase(unittest.TestCase):
             source_package_names=['calmjs.dev'],
             calmjs_module_registry_names=['calmjs.dev.module'],
             # null toolchain does not prepare this
-            transpile_source_map={
+            transpile_sourcepath={
                 'calmjs/dev/main': main,
             },
         )
@@ -448,7 +448,7 @@ class CliRuntimeTestCase(unittest.TestCase):
                 test_main = resource_filename(
                     'calmjs.dev.tests', 'test_main.js')
                 spec.update(dict(
-                    transpile_source_map={
+                    transpile_sourcepath={
                         'calmjs/dev/main': main,
                     },
                     test_module_paths_map={

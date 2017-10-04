@@ -250,12 +250,12 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             source_package_names=['calmjs.dev'],
             calmjs_test_registry_names=['calmjs.dev.module.tests'],
             calmjs_module_registry_names=['calmjs.dev.module'],
-            bundled_targets={'jquery': 'jquery.js'},
+            bundled_targetpaths={'jquery': 'jquery.js'},
             # provide the other bits that normally get set up earlier.
-            transpiled_targets={
+            transpiled_targetpaths={
                 'calmjs/dev/main': 'calmjs/dev/main.js',
             },
-            karma_spec_keys=['bundled_targets', 'transpiled_targets'],
+            karma_spec_keys=['bundled_targetpaths', 'transpiled_targetpaths'],
             coverage_enable=True,
             no_wrap_tests=True,
         )
@@ -285,12 +285,12 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             source_package_names=['calmjs.dev'],
             calmjs_test_registry_names=['calmjs.dev.module.tests'],
             calmjs_module_registry_names=['calmjs.dev.module'],
-            bundled_targets={'jquery': 'jquery.js'},
+            bundled_targetpaths={'jquery': 'jquery.js'},
             # provide the other bits that normally get set up earlier.
-            transpiled_targets={
+            transpiled_targetpaths={
                 'calmjs/dev/main': 'calmjs/dev/main.js',
             },
-            karma_spec_keys=['bundled_targets', 'transpiled_targets'],
+            karma_spec_keys=['bundled_targetpaths', 'transpiled_targetpaths'],
             coverage_enable=True,
             no_wrap_tests=False,
         )
@@ -320,12 +320,12 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             source_package_names=['calmjs.dev'],
             calmjs_test_registry_names=['calmjs.dev.module.tests'],
             calmjs_module_registry_names=['calmjs.dev.module'],
-            bundled_targets={'jquery': 'jquery.js'},
+            bundled_targetpaths={'jquery': 'jquery.js'},
             # provide the other bits that normally get set up earlier.
-            transpiled_targets={
+            transpiled_targetpaths={
                 'calmjs/dev/main': 'calmjs/dev/main.js',
             },
-            karma_spec_keys=['bundled_targets', 'transpiled_targets'],
+            karma_spec_keys=['bundled_targetpaths', 'transpiled_targetpaths'],
             coverage_enable=True,
             coverage_type='lcov',
             no_wrap_tests=True,
@@ -353,12 +353,12 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             source_package_names=['calmjs.dev'],
             calmjs_test_registry_names=['calmjs.dev.module.tests'],
             calmjs_module_registry_names=['calmjs.dev.module'],
-            bundled_targets={'jquery': 'jquery.js'},
+            bundled_targetpaths={'jquery': 'jquery.js'},
             # provide the other bits that normally get set up earlier.
-            transpiled_targets={
+            transpiled_targetpaths={
                 'calmjs/dev/main': 'calmjs/dev/main.js',
             },
-            karma_spec_keys=['bundled_targets', 'transpiled_targets'],
+            karma_spec_keys=['bundled_targetpaths', 'transpiled_targetpaths'],
             coverage_enable=True,
             coverage_type='lcov',
             no_wrap_tests=False,
@@ -386,18 +386,19 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             source_package_names=['calmjs.dev'],
             calmjs_test_registry_names=['calmjs.dev.module.tests'],
             calmjs_module_registry_names=['calmjs.dev.module'],
-            bundled_targets={'jquery': 'jquery.js'},
+            bundled_targetpaths={'jquery': 'jquery.js'},
             # provide the other bits that normally get set up earlier.
-            transpiled_targets={
+            transpiled_targetpaths={
                 'calmjs/dev/main': 'calmjs/dev/main.js',
                 'calmjs/dev/__main__': 'calmjs/dev/__main__.js',
             },
             # for testing the filtering
-            css_targets={
+            css_targetpaths={
                 'calmjs/dev/main': 'calmjs/dev/main.css',
             },
             karma_spec_keys=[
-                'bundled_targets', 'transpiled_targets', 'css_targets',
+                'bundled_targetpaths', 'transpiled_targetpaths',
+                'css_targetpaths',
             ],
             coverage_enable=True,
             cover_bundle=True,
@@ -432,18 +433,19 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             source_package_names=['calmjs.dev'],
             calmjs_test_registry_names=['calmjs.dev.module.tests'],
             calmjs_module_registry_names=['calmjs.dev.module'],
-            bundled_targets={'jquery': 'jquery.js'},
+            bundled_targetpaths={'jquery': 'jquery.js'},
             # provide the other bits that normally get set up earlier.
-            transpiled_targets={
+            transpiled_targetpaths={
                 'calmjs/dev/main': 'calmjs/dev/main.js',
                 'calmjs/dev/__main__': 'calmjs/dev/__main__.js',
             },
             # for testing the filtering
-            css_targets={
+            css_targetpaths={
                 'calmjs/dev/main': 'calmjs/dev/main.css',
             },
             karma_spec_keys=[
-                'bundled_targets', 'transpiled_targets', 'css_targets',
+                'bundled_targetpaths', 'transpiled_targetpaths',
+                'css_targetpaths',
             ],
             coverage_enable=True,
             coverage_type='lcovonly',

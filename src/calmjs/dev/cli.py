@@ -149,7 +149,7 @@ class KarmaDriver(NodeDriver):
 
         if not spec.get(COVER_BUNDLE):
             # remove all the bundled sources
-            for path in spec.get('bundled_targets', {}).values():
+            for path in spec.get('bundled_targetpaths', {}).values():
                 paths.discard(path)
 
         if spec.get(COVER_TEST):

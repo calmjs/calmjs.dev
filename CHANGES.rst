@@ -1,6 +1,12 @@
 Changelog
 =========
 
+2.0.0 (unreleased)
+------------------
+
+- Migration to calmjs-3.0.0
+- Track the paths that are covered in the spec.
+
 1.1.0 (2017-08-10)
 ------------------
 

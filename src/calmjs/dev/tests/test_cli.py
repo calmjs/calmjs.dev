@@ -277,6 +277,10 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
         # default specifies three different reporters.
         self.assertEqual(
             len(spec['karma_config']['coverageReporter']['reporters']), 4)
+        self.assertEqual(
+            spec['test_covered_build_dir_paths'], {'calmjs/dev/main.js'})
+        self.assertNotIn('test_covered_test_paths', spec)
+        self.assertNotIn('test_covered_artifact_paths', spec)
 
     def test_create_config_with_coverage_standard(self):
         # this is usually provided by the toolchains themselves
@@ -426,6 +430,8 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             'dir': realpath('coverage'),
         })
 
+        self.assertEqual(2, len(spec['test_covered_test_paths']))
+
     def test_create_config_with_coverage_alternative_file(self):
         # provide bundle and also include tests
         original = dict(
@@ -474,6 +480,21 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             'dir': realpath('lcov-coverage'),
             'file': realpath('lcov.txt'),
         })
+
+    def test_create_config_artifact_paths(self):
+        driver = cli.KarmaDriver()
+        spec = Spec(
+            artifact_paths=[
+                'test/artifact.css',
+                'test/artifact.js',
+            ],
+            coverage_enable=True,
+            cover_bundle=True,
+            cover_artifact=True,
+        )
+        driver.create_config(spec)
+        self.assertEqual(
+            spec['test_covered_artifact_paths'], {'test/artifact.js'})
 
     def test_write_config_not_enough_info(self):
         build_dir = mkdtemp(self)

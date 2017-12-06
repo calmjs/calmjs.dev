@@ -48,6 +48,10 @@ from calmjs.dev.toolchain import NO_WRAP_TESTS
 from calmjs.dev.toolchain import TEST_FILENAME_PREFIX
 from calmjs.dev.toolchain import TEST_FILENAME_PREFIX_DEFAULT
 
+from calmjs.dev.toolchain import TEST_COVERED_ARTIFACT_PATHS
+from calmjs.dev.toolchain import TEST_COVERED_TEST_PATHS
+from calmjs.dev.toolchain import TEST_COVERED_BUILD_DIR_PATHS
+
 logger = logging.getLogger(__name__)
 
 
@@ -152,13 +156,25 @@ class KarmaDriver(NodeDriver):
             for path in spec.get('bundled_targetpaths', {}).values():
                 paths.discard(path)
 
+        spec[TEST_COVERED_BUILD_DIR_PATHS] = set(
+            path for path in paths
+            if self._valid_cover_file(path)
+        )
+
         if spec.get(COVER_TEST):
-            for path in test_module_paths:
-                paths.add(path)
+            paths.update(test_module_paths)
+            spec[TEST_COVERED_TEST_PATHS] = set(
+                path for path in test_module_paths
+                if self._valid_cover_file(path)
+            )
 
         if spec.get(COVER_ARTIFACT):
-            for path in spec.get(ARTIFACT_PATHS):
-                paths.add(path)
+            artifact_paths = spec.get(ARTIFACT_PATHS)
+            paths.update(artifact_paths)
+            spec[TEST_COVERED_ARTIFACT_PATHS] = set(
+                path for path in artifact_paths
+                if self._valid_cover_file(path)
+            )
 
         # for the coverageReporter key
         cover_type = spec.get(COVERAGE_TYPE, COVERAGE_TYPE_DEFAULT)

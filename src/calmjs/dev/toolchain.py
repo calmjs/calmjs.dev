@@ -24,6 +24,14 @@ NO_WRAP_TESTS = 'no_wrap_tests'
 # test filename prefix
 TEST_FILENAME_PREFIX = 'test_filename_prefix'
 
+# the paths to be covered by the tests
+# artifacts that were covered
+TEST_COVERED_ARTIFACT_PATHS = 'test_covered_artifact_paths'
+# paths relative to the build_dir (i.e. inside it) that are covered
+TEST_COVERED_BUILD_DIR_PATHS = 'test_covered_build_dir_paths'
+# the test paths that were covered
+TEST_COVERED_TEST_PATHS = 'test_covered_test_paths'
+
 # values for some of the above keys
 COVERAGE_TYPE_DEFAULT = 'default'
 COVER_REPORT_DIR_DEFAULT = 'coverage'

@@ -34,7 +34,7 @@ package_json = {
         "karma-chrome-launcher": "~2.0.0",
         "karma-coverage": "~0.3.1",
         "karma-expect": "~1.1.2",
-        "karma-firefox-launcher": "~1.0.0",
+        "karma-firefox-launcher": "~1.1.0",
         "karma-junit-reporter": "~0.2.2",
         "karma-mocha": "~1.2.0",
         "karma-phantomjs-launcher": "~1.0.2",

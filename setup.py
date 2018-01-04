@@ -77,6 +77,8 @@ setup(
             # for pure development of calmjs.dev
             'calmjs.dev.module = calmjs.module:ModuleRegistry',
             'calmjs.dev.module.tests = calmjs.module:ModuleRegistry',
+            'calmjs.artifacts.tests = '
+            'calmjs.dev.artifact:ArtifactTestRegistry',
         ],
         'calmjs.dev.module': [
             'calmjs.dev = calmjs.dev',

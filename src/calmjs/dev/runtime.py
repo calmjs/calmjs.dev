@@ -56,6 +56,7 @@ def prepare_spec_artifacts(spec):
                 logger.warning(
                     "specified artifact '%s' does not exists", realp)
                 continue
+            logger.debug("specified artifact '%s' found", realp)
             yield realp
 
     # do not sort this list, it is provided with a specific order

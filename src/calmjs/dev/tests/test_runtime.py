@@ -4,6 +4,8 @@ import os
 import sys
 from os.path import exists
 from os.path import join
+from os.path import pathsep
+from textwrap import dedent
 
 from pkg_resources import resource_filename
 from pkg_resources import WorkingSet
@@ -629,6 +631,65 @@ class CliRuntimeTestCase(unittest.TestCase):
         self.assertNotIn("CRITICAL", sys.stderr.getvalue())
         # plenty of info though
         self.assertIn("INFO", sys.stderr.getvalue())
+
+    def test_karma_runtime_multiple_artifacts_single_arg(self):
+        stub_stdouts(self)
+        extra_artifact = join(mkdtemp(self), 'lib.js')
+        with open(extra_artifact, 'w') as fd:
+            fd.write(dedent("""
+            'use strict';
+
+            var Lib = function(args) {
+            };
+
+            Lib.prototype.add2 = function (i) {
+                return i + i;
+            };
+            """))
+
+        # use the full blown runtime
+        rt = KarmaRuntime(self.driver)
+        # the artifact in our case is identical to the source file
+        artifact = resource_filename('calmjs.dev', 'main.js')
+        rt([
+            'run', '--artifact', pathsep.join([artifact, extra_artifact]),
+            '--test-registry', 'calmjs.dev.module.tests',
+            '--test-package', 'calmjs.dev',
+            '-vv',
+        ])
+        logs = sys.stderr.getvalue()
+        self.assertIn("specified artifact '%s' found" % artifact, logs)
+        self.assertIn("specified artifact '%s' found" % extra_artifact, logs)
+
+    def test_karma_runtime_multiple_artifacts_multi_args(self):
+        stub_stdouts(self)
+        extra_artifact = join(mkdtemp(self), 'lib.js')
+        with open(extra_artifact, 'w') as fd:
+            fd.write(dedent("""
+            'use strict';
+
+            var Lib = function(args) {
+            };
+
+            Lib.prototype.add2 = function (i) {
+                return i + i;
+            };
+            """))
+
+        # use the full blown runtime
+        rt = KarmaRuntime(self.driver)
+        # the artifact in our case is identical to the source file
+        artifact = resource_filename('calmjs.dev', 'main.js')
+        rt([
+            'run',
+            '--artifact', artifact, '--artifact', extra_artifact,
+            '--test-registry', 'calmjs.dev.module.tests',
+            '--test-package', 'calmjs.dev',
+            '-vv',
+        ])
+        logs = sys.stderr.getvalue()
+        self.assertIn("specified artifact '%s' found" % artifact, logs)
+        self.assertIn("specified artifact '%s' found" % extra_artifact, logs)
 
     def test_karma_runtime_run_artifact_cover(self):
         stub_stdouts(self)

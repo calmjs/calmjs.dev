@@ -15,6 +15,7 @@ from argparse import SUPPRESS
 from calmjs.argparse import StoreDelimitedList
 from calmjs.argparse import StorePathSepDelimitedList
 from calmjs.argparse import StoreRequirementList
+from calmjs.argparse import metavar
 from calmjs.toolchain import ADVICE_PACKAGES
 from calmjs.toolchain import ARTIFACT_PATHS
 from calmjs.toolchain import CALMJS_TEST_REGISTRY_NAMES
@@ -69,7 +70,7 @@ def init_argparser_common(argparser):
     argparser.add_argument(
         '--test-registry', default=[],
         dest=CALMJS_TEST_REGISTRY_NAMES, action=StoreDelimitedList,
-        metavar='REGISTRY[,REGISTRY...]',
+        metavar='<registry>[,<registry>...]',
         help='comma separated list of registries to use for gathering '
              'JavaScript tests from the Python packages specified via the '
              'toolchain runtime; default behavior is to auto-select, '
@@ -85,7 +86,7 @@ def init_argparser_common(argparser):
 
     argparser.add_argument(
         '--test-package', default=[],
-        metavar='PACKAGE[,PACKAGE...]',
+        metavar='<package>[,<package>...]',
         dest=TEST_PACKAGE_NAMES, action=StoreDelimitedList,
         help='comma separated list of Python packages to gather JavaScript '
              'tests from; this is an explicit list, no dependency resolution '
@@ -100,12 +101,12 @@ def init_argparser_common(argparser):
 
     argparser.add_argument(
         '--browser', default=[],
-        metavar='BROWSER[,BROWSER...]',
+        metavar='<browser>[,<browser>...]',
         dest=KARMA_BROWSERS, action=StoreDelimitedList,
-        help='comma separated list of browsers to use for testing; the must '
-             'be available within the current Node.js installation; values '
-             'are case sensitive, refer to the documentation for the relevant '
-             'karma-*-launcher npm modules; defaults to PhantomJS',
+        help="comma separated list of browsers to use for testing; the must "
+             "be available within the current Node.js installation; values "
+             "are case sensitive, refer to the documentation for the relevant "
+             "karma-*-launcher npm modules; defaults to 'PhantomJS'",
     )
 
     argparser.add_argument(
@@ -123,7 +124,7 @@ def init_argparser_common(argparser):
     argparser.add_argument(
         '--cover-report-dir',
         dest=COVER_REPORT_DIR, action='store', default='coverage',
-        metavar='DIR',
+        metavar=metavar('DIR'),
         help="location to store the coverage report; "
              "defaults to 'coverage'",
     )
@@ -131,7 +132,7 @@ def init_argparser_common(argparser):
     argparser.add_argument(
         '--cover-report-file',
         dest=COVER_REPORT_FILE, action='store',
-        metavar='FILE',
+        metavar=metavar('FILE'),
         help="location to write the coverage report file for "
              "coverage types that write out to a single file; "
              "defaults to whatever default option for the specific "
@@ -159,10 +160,11 @@ def init_argparser_common(argparser):
     argparser.add_argument(
         '--artifact', default=[],
         dest=ARTIFACT_PATHS, action=StorePathSepDelimitedList,
-        metavar='FILE[%sFILE...]' % pathsep,
-        help="a list of artifact files to test; multiple paths to the "
-             "files are to be separated by platform's path separation "
-             "character '%s'" % pathsep,
+        metavar='<file>[%s<file>...]' % pathsep,
+        help="artifact file(s) to be included for test execution; multiple "
+             "files may be specified using multiple seperate flags, or be "
+             "specified under a single flag with each path separated by the "
+             "platform's path separation character '%s'" % pathsep,
     )
 
     argparser.add_argument(
@@ -226,7 +228,7 @@ class TestToolchainRuntime(ToolchainRuntime):
         argparser.add_argument(
             '--extra-frameworks', default=[],
             dest=KARMA_EXTRA_FRAMEWORKS, action=StoreDelimitedList,
-            metavar='FRAMEWORK[,FRAMEWORK...]',
+            metavar='<framework>[,<framework>...]',
             help='comma separated list of extra frameworks to be added to '
                  'the generated karma configuration; the package for the '
                  'framework must exist for the current Node.js installation',
@@ -236,7 +238,7 @@ class TestToolchainRuntime(ToolchainRuntime):
             '-t', '--toolchain-package', default=None,
             required=False, dest=ADVICE_PACKAGES,
             action=StoreRequirementList, maxlen=1,
-            metavar='TOOLCHAIN_PACKAGE',
+            metavar=metavar('PACKAGE'),
             help='the name of the package that supplied the original '
                  'toolchain that created the artifacts selected; extras may '
                  'be permitted, consult the documentation for that package '
@@ -247,7 +249,7 @@ class TestToolchainRuntime(ToolchainRuntime):
 
         argparser.add_argument(
             dest=TEST_PACKAGE_NAMES, nargs='*', default=[],
-            metavar='PACKAGE',
+            metavar='<package>',
             help='Python package to gather JavaScript tests from; '
                  'no package dependency resolution will be applied'
         )
@@ -267,12 +269,14 @@ class KarmaRuntime(Runtime, DriverRuntime):
 
     def __init__(
             self, cli_driver,
+            action_key='karma_runtime',
             karma_entry_point_group=CALMJS_DEV_RUNTIME_KARMA,
             description='karma testrunner integration for calmjs',
             *a, **kw):
         self.karma_entry_point_group = karma_entry_point_group
         super(KarmaRuntime, self).__init__(
-            cli_driver=cli_driver, description=description, *a, **kw)
+            cli_driver=cli_driver, description=description,
+            action_key=action_key, *a, **kw)
 
     def entry_point_load_validated(self, entry_point):
         # to avoid trying to import this again, check entry_point first

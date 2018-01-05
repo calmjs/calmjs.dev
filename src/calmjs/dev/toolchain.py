@@ -7,7 +7,9 @@ from calmjs.dist import flatten_module_registry_names
 # reserved terms
 # flag for enabling coverage through karma-coverage (istanbul)
 COVERAGE_ENABLE = 'coverage_enable'
-# the type of the coverage report to generate
+# the types of the coverage report to generate
+COVER_REPORT_TYPES = 'cover_report_types'
+# deprecated flag - this only specifies the legacy singular option
 COVERAGE_TYPE = 'coverage_type'
 # flag for including coverage report for artifacts
 COVER_ARTIFACT = 'cover_artifact'
@@ -32,10 +34,11 @@ TEST_COVERED_BUILD_DIR_PATHS = 'test_covered_build_dir_paths'
 # the test paths that were covered
 TEST_COVERED_TEST_PATHS = 'test_covered_test_paths'
 
-# values for some of the above keys
-COVERAGE_TYPE_DEFAULT = 'default'
 COVER_REPORT_DIR_DEFAULT = 'coverage'
 TEST_FILENAME_PREFIX_DEFAULT = 'test'
+
+# BBB backward compat
+COVERAGE_TYPE_DEFAULT = 'default'
 
 
 class TestToolchain(Toolchain):

@@ -243,6 +243,48 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             log.getvalue(),
         )
 
+    def test_coverage_reporter_apply_default(self):
+        spec = Spec(
+            coverage_enable=True,
+            no_wrap_tests=True,
+        )
+        driver = cli.KarmaDriver()
+        config = {}
+        driver._apply_coverage_reporters(spec, config)
+        self.assertEqual(4, len(config['coverageReporter']['reporters']))
+
+    def test_coverage_reporter_apply_singular(self):
+        spec = Spec(
+            coverage_enable=True,
+            no_wrap_tests=True,
+            cover_report_types=['html'],
+        )
+        driver = cli.KarmaDriver()
+        config = {}
+        driver._apply_coverage_reporters(spec, config)
+        self.assertEqual({
+            'type': 'html',
+            'dir': realpath('coverage'),
+        }, config['coverageReporter'])
+
+    def test_coverage_reporter_apply_legacy(self):
+        spec = Spec(
+            coverage_enable=True,
+            no_wrap_tests=True,
+            coverage_type='html',
+        )
+        driver = cli.KarmaDriver()
+        config = {}
+        with pretty_logging(
+                logger='calmjs.dev', stream=mocks.StringIO()) as log:
+            driver._apply_coverage_reporters(spec, config)
+        self.assertIn("WARNING", log.getvalue())
+        self.assertIn("'coverage_type' is deprecated", log.getvalue())
+        self.assertEqual({
+            'type': 'html',
+            'dir': realpath('coverage'),
+        }, config['coverageReporter'])
+
     def test_create_config_with_coverage_standard_no_wrap(self):
         # this is usually provided by the toolchains themselves
         spec = Spec(
@@ -331,7 +373,7 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             },
             karma_spec_keys=['bundled_targetpaths', 'transpiled_targetpaths'],
             coverage_enable=True,
-            coverage_type='lcov',
+            cover_report_types=['lcov'],
             no_wrap_tests=True,
         )
         driver = cli.KarmaDriver()
@@ -364,7 +406,7 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             },
             karma_spec_keys=['bundled_targetpaths', 'transpiled_targetpaths'],
             coverage_enable=True,
-            coverage_type='lcov',
+            cover_report_types=['lcov'],
             no_wrap_tests=False,
         )
         driver = cli.KarmaDriver()
@@ -407,7 +449,7 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             coverage_enable=True,
             cover_bundle=True,
             cover_test=True,
-            coverage_type='lcov',
+            cover_report_types=['lcov'],
             no_wrap_tests=False,
         )
         driver = cli.KarmaDriver()
@@ -454,7 +496,7 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
                 'css_targetpaths',
             ],
             coverage_enable=True,
-            coverage_type='lcovonly',
+            cover_report_types=['lcovonly'],
             cover_report_dir='lcov-coverage',
             cover_report_file='lcov.txt',
         )
@@ -466,7 +508,7 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
         self.assertEqual(spec['karma_config']['coverageReporter'], {
             'type': 'lcovonly',
             'dir': realpath('lcov-coverage'),
-            'file': 'lcov.txt',
+            'file': join(realpath('lcov-coverage'), 'lcov.txt'),
         })
 
         original['cover_report_file'] = join(curdir, 'lcov.txt')

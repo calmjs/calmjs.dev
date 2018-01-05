@@ -27,14 +27,15 @@ from calmjs.runtime import Runtime
 from calmjs.dev.cli import KarmaDriver
 from calmjs.dev.toolchain import KarmaToolchain
 from calmjs.dev.toolchain import COVERAGE_ENABLE
-from calmjs.dev.toolchain import COVERAGE_TYPE
-from calmjs.dev.toolchain import COVERAGE_TYPE_DEFAULT
+from calmjs.dev.toolchain import COVER_REPORT_TYPES
 from calmjs.dev.toolchain import COVER_ARTIFACT
 from calmjs.dev.toolchain import COVER_BUNDLE
 from calmjs.dev.toolchain import COVER_REPORT_DIR
 from calmjs.dev.toolchain import COVER_REPORT_FILE
 from calmjs.dev.toolchain import COVER_TEST
 from calmjs.dev.toolchain import NO_WRAP_TESTS
+from calmjs.dev.karma import COVER_REPORT_TYPE_OPTIONS
+from calmjs.dev.karma import DEFAULT_COVER_REPORT_TYPE_OPTIONS
 from calmjs.dev.karma import KARMA_ABORT_ON_TEST_FAILURE
 from calmjs.dev.karma import KARMA_BROWSERS
 from calmjs.dev.karma import KARMA_EXTRA_FRAMEWORKS
@@ -133,22 +134,41 @@ def init_argparser_common(argparser):
         '--cover-report-file',
         dest=COVER_REPORT_FILE, action='store',
         metavar=metavar('FILE'),
-        help="location to write the coverage report file for "
-             "coverage types that write out to a single file; "
-             "defaults to whatever default option for the specific "
-             "coverage report type",
+        help="location to write the coverage report file for the case where "
+             "a single coverage type was specified and that the coverage type "
+             "report is a single file; the default value is coverage type "
+             "specific, and this option is omitted where not applicable, or "
+             "when multiple coverage report types are specified",
+    )
+
+    argparser.add_argument(
+        '--cover-report-type',
+        dest=COVER_REPORT_TYPES,
+        default=DEFAULT_COVER_REPORT_TYPE_OPTIONS,
+        choices=sorted(COVER_REPORT_TYPE_OPTIONS.keys()),
+        action=StoreDelimitedList,
+        help="the type of coverage report to generate; "
+             "the default is a custom multiple coverage report "
+             "configuration",
+    )
+
+    argparser.add_argument(
+        '--cover-report-types',
+        dest=COVER_REPORT_TYPES,
+        default=DEFAULT_COVER_REPORT_TYPE_OPTIONS,
+        choices=sorted(COVER_REPORT_TYPE_OPTIONS.keys()),
+        action=StoreDelimitedList,
+        help=SUPPRESS,
     )
 
     argparser.add_argument(
         '--coverage-type',
-        dest=COVERAGE_TYPE, default=COVERAGE_TYPE_DEFAULT,
-        choices=[
-            COVERAGE_TYPE_DEFAULT,
-            'html', 'lcov', 'lcovonly', 'text', 'text-summary',
-        ],
-        help="the type of coverage report to generate; "
-             "defaults to '%s'; which is a custom multi "
-             "configuration" % COVERAGE_TYPE_DEFAULT,
+        dest=COVER_REPORT_TYPES,
+        default=DEFAULT_COVER_REPORT_TYPE_OPTIONS,
+        choices=sorted(COVER_REPORT_TYPE_OPTIONS.keys()),
+        action=StoreDelimitedList,
+        deprecation="will be removed by calmjs.dev-3.0.0; please use "
+                    "'--cover-report-type' instead",
     )
 
     argparser.add_argument(
@@ -328,7 +348,6 @@ class KarmaRuntime(Runtime, DriverRuntime):
                 COVERAGE_ENABLE,
                 COVER_REPORT_DIR,
                 COVER_REPORT_FILE,
-                COVERAGE_TYPE,
                 COVER_ARTIFACT,
                 COVER_BUNDLE,
                 COVER_TEST,
@@ -338,6 +357,7 @@ class KarmaRuntime(Runtime, DriverRuntime):
             ([], [
                 ARTIFACT_PATHS,
                 CALMJS_TEST_REGISTRY_NAMES,
+                COVER_REPORT_TYPES,
                 TEST_PACKAGE_NAMES,
                 KARMA_BROWSERS,
                 KARMA_EXTRA_FRAMEWORKS,

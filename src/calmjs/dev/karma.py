@@ -3,6 +3,14 @@
 Module that provides integration with karma.
 """
 
+import logging
+from os.path import curdir
+from os.path import sep
+from os.path import join
+from os.path import realpath
+
+logger = logging.getLogger(__name__)
+
 # spec keys
 AFTER_KARMA = 'after_karma'
 BEFORE_KARMA = 'before_karma'
@@ -25,6 +33,27 @@ module.exports = function(config) {
 
 # other constants
 KARMA_CONF_JS = 'karma.conf.js'
+
+# note that the actual tool, with default dependencies, show that the
+# allowed values are clover, cobertura, html, json, json-summary, lcov,
+# lcovonly, none, teamcity, text, text-lcov, text-summary
+COVER_REPORT_TYPE_OPTIONS = {
+    'html': {
+        'subdir': 'html',
+    },
+    'lcov': {
+        'subdir': 'lcov',
+    },
+    'lcovonly': {
+        'file': 'coverage.lcov',
+    },
+    'json': {
+        'file': 'coverage.json',
+    },
+    'text': {
+    },
+}
+DEFAULT_COVER_REPORT_TYPE_OPTIONS = ('html', 'json', 'lcov', 'text')
 
 
 def build_base_config(
@@ -49,3 +78,50 @@ def build_base_config(
         'baseUrl', 'frameworks', 'reporters', 'port', 'colors', 'logLevel',
         'browsers', 'captureTimeout', 'singleRun',
     ]}
+
+
+def build_coverage_reporter_config(report_key, report_dir, report_file):
+    if report_key not in COVER_REPORT_TYPE_OPTIONS:
+        logger.warning("coverage reporter '%s' not supported", report_key)
+        return {}
+    reporter = {
+        'type': report_key,
+        'dir': report_dir,
+    }
+    reporter.update(COVER_REPORT_TYPE_OPTIONS[report_key])
+    # not relevant for a single report
+    reporter.pop('subdir', None)
+    if 'file' in reporter:
+        if report_file:
+            if report_file.startswith(curdir + sep):
+                report_file = realpath(report_file)
+            else:
+                report_file = join(report_dir, report_file)
+        else:
+            report_file = join(report_dir, reporter['file'])
+        reporter['file'] = report_file
+    return reporter
+
+
+def build_coverage_reporters_config(report_keys, report_dir, report_file):
+    reporters = []
+    for key in report_keys:
+        if key not in COVER_REPORT_TYPE_OPTIONS:
+            logger.warning(
+                "coverage reporter '%s' not supported", key)
+            continue
+
+        reporter = {}
+        reporter.update(COVER_REPORT_TYPE_OPTIONS[key])
+
+        # while 'subdir' is as documented, file... doesn't go there.
+        if 'file' in reporter:
+            reporter['file'] = realpath(join(report_dir, reporter['file']))
+        # stitch the key back in as the type
+        reporter['type'] = key
+        reporters.append(reporter)
+
+    return {
+        'dir': report_dir,
+        'reporters': reporters,
+    }

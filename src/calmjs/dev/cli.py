@@ -5,10 +5,8 @@ This module provides interface to the karma cli runtime.
 
 import logging
 import re
-from os.path import curdir
 from os.path import join
 from os.path import realpath
-from os.path import sep
 from subprocess import call
 
 from calmjs.exc import AdviceAbort
@@ -42,7 +40,7 @@ from calmjs.dev.toolchain import COVER_REPORT_DIR
 from calmjs.dev.toolchain import COVER_REPORT_FILE
 from calmjs.dev.toolchain import COVER_TEST
 
-from calmjs.dev.toolchain import COVERAGE_TYPE_DEFAULT
+from calmjs.dev.toolchain import COVER_REPORT_TYPES
 from calmjs.dev.toolchain import COVER_REPORT_DIR_DEFAULT
 from calmjs.dev.toolchain import NO_WRAP_TESTS
 from calmjs.dev.toolchain import TEST_FILENAME_PREFIX
@@ -144,6 +142,31 @@ class KarmaDriver(NodeDriver):
     def _valid_cover_file(self, path):
         return path.endswith('js') and not re.search('__\w*__', path)
 
+    def _apply_coverage_reporters(self, spec, config):
+        # for the coverageReporter key
+        if COVERAGE_TYPE in spec and spec[COVERAGE_TYPE] != 'default':
+            # legacy calmjs.dev key
+            logger.warning(
+                "'coverage_type' is deprecated; use 'cover_report_types' "
+                "instead")
+            report_keys = [spec[COVERAGE_TYPE]]
+        else:
+            report_keys = list(spec.get(
+                COVER_REPORT_TYPES, karma.DEFAULT_COVER_REPORT_TYPE_OPTIONS))
+
+        report_dir = realpath(spec.get(
+            COVER_REPORT_DIR, COVER_REPORT_DIR_DEFAULT))
+        report_file = spec.get(COVER_REPORT_FILE, None)
+
+        if len(report_keys) == 1:
+            coverage_reporter = karma.build_coverage_reporter_config(
+                report_keys[0], report_dir, report_file)
+        else:
+            coverage_reporter = karma.build_coverage_reporters_config(
+                report_keys, report_dir, report_file)
+
+        config['coverageReporter'] = coverage_reporter
+
     def _apply_coverage_config(self, spec, config, files, test_module_paths):
         if not spec.get(COVERAGE_ENABLE):
             return
@@ -176,49 +199,13 @@ class KarmaDriver(NodeDriver):
                 if self._valid_cover_file(path)
             )
 
-        # for the coverageReporter key
-        cover_type = spec.get(COVERAGE_TYPE, COVERAGE_TYPE_DEFAULT)
-        cover_dir = realpath(spec.get(
-                COVER_REPORT_DIR, COVER_REPORT_DIR_DEFAULT))
-        if cover_type == COVERAGE_TYPE_DEFAULT:
-            coverage_reporter = {
-                'dir': cover_dir,
-                'reporters': [
-                    {
-                        'type': 'html',
-                        'subdir': 'html',
-                    },
-                    {
-                        'type': 'lcovonly',
-                        'file': realpath(join(cover_dir, 'coverage.lcov')),
-                    },
-                    {
-                        'type': 'json',
-                        'file': realpath(join(cover_dir, 'coverage.json')),
-                    },
-                    {
-                        'type': 'text',
-                    },
-                ],
-            }
-        else:
-            coverage_reporter = {
-                'type': cover_type,
-                'dir': cover_dir,
-            }
-            if spec.get(COVER_REPORT_FILE):
-                covfile = spec.get(COVER_REPORT_FILE)
-                if covfile.startswith(curdir + sep):
-                    covfile = realpath(covfile)
-                coverage_reporter['file'] = covfile
-
         # finally, modify the config
         config['reporters'] = list(config['reporters']) + ['coverage']
         self._apply_preprocessors_config(config, {
             path: ['coverage']
             for path in paths if self._valid_cover_file(path)
         })
-        config['coverageReporter'] = coverage_reporter
+        self._apply_coverage_reporters(spec, config)
 
     def _valid_wrap_test_file(self, spec, path):
         return re.search(r'%s[^\\\/]*js$' % spec.get(

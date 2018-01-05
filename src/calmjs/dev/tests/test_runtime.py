@@ -8,6 +8,7 @@ from os.path import join
 from pkg_resources import resource_filename
 from pkg_resources import WorkingSet
 
+from calmjs.argparse import ArgumentParser
 from calmjs.exc import ToolchainAbort
 from calmjs.npm import get_npm_version
 from calmjs.npm import Driver as NPMDriver
@@ -24,7 +25,9 @@ from calmjs.utils import pretty_logging
 from calmjs.dev import cli
 from calmjs.dev.cli import KarmaDriver
 from calmjs.dev.toolchain import TestToolchain
+from calmjs.dev.karma import DEFAULT_COVER_REPORT_TYPE_OPTIONS
 from calmjs.dev.runtime import prepare_spec_artifacts
+from calmjs.dev.runtime import init_argparser_common
 from calmjs.dev.runtime import KarmaRuntime
 from calmjs.dev.runtime import TestToolchainRuntime
 
@@ -40,6 +43,52 @@ from calmjs.testing.utils import stub_mod_call
 from calmjs.testing.utils import stub_stdouts
 
 npm_version = get_npm_version()
+
+
+class TestCommonArgparser(unittest.TestCase):
+    """
+    Test out some non-trivial parsing options in the common parser
+    """
+
+    def setUp(self):
+        self.parser = ArgumentParser()
+        init_argparser_common(self.parser)
+
+    def parse(self, args):
+        return self.parser.parse_known_args(args)[0]
+
+    def test_parse_default_coverage_type(self):
+        self.assertIs(
+            DEFAULT_COVER_REPORT_TYPE_OPTIONS,
+            self.parse([]).cover_report_types,
+        )
+        # default always show this
+        self.assertIn('text', self.parse([]).cover_report_types)
+
+    def test_parse_default_cover_report_type_legacy(self):
+        import warnings
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            self.assertEqual(
+                ['html'],
+                self.parse(['--coverage-type=html']).cover_report_types)
+
+        self.assertIn("will be removed by", str(w[0].message))
+
+    def test_parse_default_cover_report_type_specified(self):
+        self.assertEqual(
+            ['html'],
+            self.parse(['--cover-report-type=html']).cover_report_types)
+
+    def test_parse_default_cover_report_type_specified_multiple(self):
+        self.assertEqual(
+            ['html', 'text'],
+            self.parse(['--cover-report-type=html,text']).cover_report_types)
+
+    def test_parse_default_cover_report_type_bad(self):
+        stub_stdouts(self)
+        with self.assertRaises(SystemExit):
+            self.parse(['--cover-report-type=bad'])
 
 
 class TestToolchainRuntimeTestCase(unittest.TestCase):

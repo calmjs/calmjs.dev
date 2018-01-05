@@ -64,6 +64,52 @@ def prepare_spec_artifacts(spec):
         spec[ARTIFACT_PATHS] = list(checkpaths(spec.get(ARTIFACT_PATHS)))
 
 
+def update_spec_for_karma(spec, **kwargs):
+    # This method assigns default values of the specific type to
+    # the spec.  Ensure they are added correctly.
+    post_process_group = (
+        # default value, and keys to be assigned that
+        (None, [
+            KARMA_ABORT_ON_TEST_FAILURE,
+            COVERAGE_ENABLE,
+            COVER_REPORT_DIR,
+            COVER_REPORT_FILE,
+            COVER_ARTIFACT,
+            COVER_BUNDLE,
+            COVER_TEST,
+            NO_WRAP_TESTS,
+        ]),
+        # For all list types.
+        ([], [
+            ARTIFACT_PATHS,
+            CALMJS_TEST_REGISTRY_NAMES,
+            COVER_REPORT_TYPES,
+            TEST_PACKAGE_NAMES,
+            KARMA_BROWSERS,
+            KARMA_EXTRA_FRAMEWORKS,
+        ]),
+    )
+    for defaultvalue, post_process in post_process_group:
+        for key in post_process:
+            if kwargs.get(key, defaultvalue) != defaultvalue:
+                spec[key] = kwargs[key]
+            else:
+                # pop them out from spec
+                spec.pop(key, None)
+
+
+def prepare_spec_from_runtime(runtime, **kwargs):
+    spec = runtime.kwargs_to_spec(**kwargs)
+
+    # The above runtime specific method MAY strip off all keys that
+    # it doesn't understand; so for the critical keys that the karma
+    # runtime require/supply, plug them back in like so:
+    update_spec_for_karma(spec, **kwargs)
+    prepare_spec_artifacts(spec)
+
+    return spec
+
+
 def init_argparser_common(argparser):
 
     # default values as empty lists to not override existing values.
@@ -338,52 +384,8 @@ class KarmaRuntime(Runtime, DriverRuntime):
             help='do not abort execution on failure',
         )
 
-    def _update_spec_for_karma(self, spec, **kwargs):
-        # This method assigns default values of the specific type to
-        # the spec.  Ensure they are added correctly.
-        post_process_group = (
-            # default value, and keys to be assigned that
-            (None, [
-                KARMA_ABORT_ON_TEST_FAILURE,
-                COVERAGE_ENABLE,
-                COVER_REPORT_DIR,
-                COVER_REPORT_FILE,
-                COVER_ARTIFACT,
-                COVER_BUNDLE,
-                COVER_TEST,
-                NO_WRAP_TESTS,
-            ]),
-            # For all list types.
-            ([], [
-                ARTIFACT_PATHS,
-                CALMJS_TEST_REGISTRY_NAMES,
-                COVER_REPORT_TYPES,
-                TEST_PACKAGE_NAMES,
-                KARMA_BROWSERS,
-                KARMA_EXTRA_FRAMEWORKS,
-            ]),
-        )
-        for defaultvalue, post_process in post_process_group:
-            for key in post_process:
-                if kwargs.get(key, defaultvalue) != defaultvalue:
-                    spec[key] = kwargs[key]
-                else:
-                    # pop them out from spec
-                    spec.pop(key, None)
-
-    def _prepare_spec_from_runtime(self, runtime, **kwargs):
-        spec = runtime.kwargs_to_spec(**kwargs)
-
-        # The above runtime specific method MAY strip off all keys that
-        # it doesn't understand; so for the critical keys that the karma
-        # runtime require/supply, plug them back in like so:
-        self._update_spec_for_karma(spec, **kwargs)
-        prepare_spec_artifacts(spec)
-
-        return spec
-
     def _run_runtime(self, runtime, **kwargs):
-        spec = self._prepare_spec_from_runtime(runtime, **kwargs)
+        spec = prepare_spec_from_runtime(runtime, **kwargs)
         toolchain = runtime.toolchain
         self.cli_driver.run(toolchain, spec)
         return spec

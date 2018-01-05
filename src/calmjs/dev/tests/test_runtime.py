@@ -28,6 +28,7 @@ from calmjs.dev.toolchain import TestToolchain
 from calmjs.dev.karma import DEFAULT_COVER_REPORT_TYPE_OPTIONS
 from calmjs.dev.runtime import prepare_spec_artifacts
 from calmjs.dev.runtime import init_argparser_common
+from calmjs.dev.runtime import update_spec_for_karma
 from calmjs.dev.runtime import KarmaRuntime
 from calmjs.dev.runtime import TestToolchainRuntime
 
@@ -155,30 +156,24 @@ class TestToolchainRuntimeTestCase(unittest.TestCase):
 class BaseRuntimeTestCase(unittest.TestCase):
 
     def test_update_spec_for_karma(self):
-        driver = KarmaDriver()
-        runtime = KarmaRuntime(driver)
         spec = Spec(karma_abort_on_test_failure=1)
-        runtime._update_spec_for_karma(spec, test_package_names=['default'])
+        update_spec_for_karma(spec, test_package_names=['default'])
         # values not provided via kwargs will be disappeared.
         self.assertEqual(dict(spec), {
             'test_package_names': ['default'],
         })
 
     def test_update_spec_for_karma_type_check(self):
-        driver = KarmaDriver()
-        runtime = KarmaRuntime(driver)
         spec = Spec()
-        runtime._update_spec_for_karma(spec, artifact_paths=['artifact.js'])
+        update_spec_for_karma(spec, artifact_paths=['artifact.js'])
         # values not provided via kwargs will be disappeared.
         self.assertEqual(dict(spec), {
             'artifact_paths': ['artifact.js'],
         })
 
     def test_update_spec_for_karma_default_value_dropped(self):
-        driver = KarmaDriver()
-        runtime = KarmaRuntime(driver)
         spec = Spec()
-        runtime._update_spec_for_karma(spec, artifact_paths=[])
+        update_spec_for_karma(spec, artifact_paths=[])
         # values not provided via kwargs will be disappeared.
         self.assertEqual(dict(spec), {})
 

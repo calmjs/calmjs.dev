@@ -89,6 +89,9 @@ setup(
         'calmjs.runtime': [
             'karma = calmjs.dev.runtime:karma',
         ],
+        'calmjs.runtime.artifact': [
+            'karma = calmjs.dev.runtime:artifact_karma',
+        ],
         'calmjs.dev.runtime.karma': [
             'run = calmjs.dev.runtime:run',
         ],

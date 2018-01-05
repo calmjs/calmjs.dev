@@ -2,10 +2,12 @@
 import unittest
 import os
 import sys
+from os.path import dirname
 from os.path import exists
 from os.path import join
 from os.path import pathsep
 from textwrap import dedent
+from types import ModuleType
 
 from pkg_resources import resource_filename
 from pkg_resources import WorkingSet
@@ -27,12 +29,15 @@ from calmjs.utils import pretty_logging
 from calmjs.dev import cli
 from calmjs.dev.cli import KarmaDriver
 from calmjs.dev.toolchain import TestToolchain
+from calmjs.dev.toolchain import KarmaToolchain
+from calmjs.dev.artifact import ArtifactTestRegistry
 from calmjs.dev.karma import DEFAULT_COVER_REPORT_TYPE_OPTIONS
 from calmjs.dev.runtime import prepare_spec_artifacts
 from calmjs.dev.runtime import init_argparser_common
 from calmjs.dev.runtime import update_spec_for_karma
 from calmjs.dev.runtime import KarmaRuntime
 from calmjs.dev.runtime import TestToolchainRuntime
+from calmjs.dev.runtime import KarmaArtifactRuntime
 
 from calmjs.testing import mocks
 from calmjs.testing.utils import make_dummy_dist
@@ -824,3 +829,83 @@ class CliRuntimeTestCase(unittest.TestCase):
             result['calmjs_module_registry_names'], ['calmjs.dev.module'])
         self.assertIn(
             'calmjs/dev/tests/test_main', result['test_module_paths_map'])
+
+    def test_artifact_verify(self):
+
+        def generic_tester(package_names, export_target):
+            spec = Spec(
+                artifact_paths=[export_target],
+                test_package_names=package_names,
+                # typically, the toolchain test advice will be advised
+                # to the spec which will then set these up.
+                calmjs_test_registry_names=['calmjs.dev.module.tests'],
+            )
+            return KarmaToolchain(), spec,
+
+        tester_mod = ModuleType('calmjs_dev_tester')
+        tester_mod.generic = generic_tester
+
+        self.addCleanup(sys.modules.pop, 'calmjs_dev_tester')
+        sys.modules['calmjs_dev_tester'] = tester_mod
+
+        working_dir = mkdtemp(self)
+
+        make_dummy_dist(self, (
+            ('entry_points.txt', '\n'.join([
+                '[calmjs.artifacts.tests]',
+                'artifact.js = calmjs_dev_tester:generic',
+            ])),
+        ), 'calmjs.dev', '1.0', working_dir=working_dir)
+
+        # simply inject the "artifact" for this package into the
+        # registry
+        mock_ws = WorkingSet([working_dir])
+        registry = ArtifactTestRegistry(
+            'calmjs.artifacts.tests', _working_set=mock_ws)
+
+        # produce the "artifact" by simply the local main.js
+        main_js = resource_filename('calmjs.dev', 'main.js')
+        artifact_target = registry.get_artifact_filename(
+            'calmjs.dev', 'artifact.js')
+        os.mkdir(dirname(artifact_target))
+        with open(main_js) as reader:
+            with open(artifact_target, 'w') as writer:
+                writer.write(reader.read())
+
+        # assign this dummy registry to the root records with cleanup
+        self.addCleanup(root_registry.records.pop, 'calmjs.artifacts.tests')
+        root_registry.records['calmjs.artifacts.tests'] = registry
+
+        # use the verify artifact runtime directly
+        rt = KarmaArtifactRuntime()
+
+        # since there is a failure test case
+        stub_stdouts(self)
+        self.assertFalse(rt(['calmjs.dev']))
+        self.assertIn('continuing as specified', sys.stderr.getvalue())
+
+        # should not explode if the abort is triggered
+        stub_stdouts(self)
+        self.assertFalse(rt(['calmjs.dev', '-x']))
+        self.assertIn(
+            'terminating due to expected unrecoverable condition',
+            sys.stderr.getvalue()
+        )
+
+        # manipulate the registry to remove the fail test
+        reg = root_registry.get('calmjs.dev.module.tests')
+        reg.records['calmjs.dev.tests'].pop('calmjs/dev/tests/test_fail', '')
+
+        # should finally pass
+        self.assertTrue(rt(['calmjs.dev']))
+
+        report_dir = join(mkdtemp(self), 'reports')
+        # also ensure that the options
+        self.assertTrue(rt([
+            'calmjs.dev',
+            '--coverage',
+            '--cover-report-dir', report_dir,
+            '--cover-artifact',
+        ]))
+
+        self.assertTrue(exists(report_dir))

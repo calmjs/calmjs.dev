@@ -20,9 +20,11 @@ from calmjs.toolchain import ADVICE_PACKAGES
 from calmjs.toolchain import ARTIFACT_PATHS
 from calmjs.toolchain import CALMJS_TEST_REGISTRY_NAMES
 from calmjs.toolchain import TEST_PACKAGE_NAMES
+from calmjs.runtime import BaseArtifactRegistryRuntime
 from calmjs.runtime import ToolchainRuntime
 from calmjs.runtime import DriverRuntime
 from calmjs.runtime import Runtime
+from calmjs.registry import get
 
 from calmjs.dev.cli import KarmaDriver
 from calmjs.dev.toolchain import KarmaToolchain
@@ -39,6 +41,7 @@ from calmjs.dev.karma import DEFAULT_COVER_REPORT_TYPE_OPTIONS
 from calmjs.dev.karma import KARMA_ABORT_ON_TEST_FAILURE
 from calmjs.dev.karma import KARMA_BROWSERS
 from calmjs.dev.karma import KARMA_EXTRA_FRAMEWORKS
+from calmjs.dev.karma import KARMA_RETURN_CODE
 
 logger = logging.getLogger(__name__)
 
@@ -122,8 +125,7 @@ def init_argparser_common(argparser):
         help='comma separated list of registries to use for gathering '
              'JavaScript tests from the Python packages specified via the '
              'toolchain runtime; default behavior is to auto-select, '
-             'enable verbose output to check to see which ones were '
-             'selected',
+             'verbose logging output will list the selection',
     )
 
     argparser.add_argument(
@@ -136,9 +138,9 @@ def init_argparser_common(argparser):
         '--test-package', default=[],
         metavar='<package>[,<package>...]',
         dest=TEST_PACKAGE_NAMES, action=StoreDelimitedList,
-        help='comma separated list of Python packages to gather JavaScript '
-             'tests from; this is an explicit list, no dependency resolution '
-             'will be applied'
+        help='explicitly specify Python package(s) to gather JavaScript tests '
+             'from, overriding any automatic resolution that may be in place; '
+             'no dependency resolution will be applied to acquire extra tests',
     )
 
     argparser.add_argument(
@@ -151,7 +153,7 @@ def init_argparser_common(argparser):
         '--browser', default=[],
         metavar='<browser>[,<browser>...]',
         dest=KARMA_BROWSERS, action=StoreDelimitedList,
-        help="comma separated list of browsers to use for testing; the must "
+        help="comma separated list of browsers to use for testing; they must "
              "be available within the current Node.js installation; values "
              "are case sensitive, refer to the documentation for the relevant "
              "karma-*-launcher npm modules; defaults to 'PhantomJS'",
@@ -329,6 +331,51 @@ class TestToolchainRuntime(ToolchainRuntime):
         """
 
 
+class KarmaArtifactRuntime(BaseArtifactRegistryRuntime):
+    """
+    karma runner for testing of pre-built artifacts in packages
+    """
+
+    def init_argparser(self, argparser):
+        """
+        Keep everything in parent as the overrides are applied above.
+        The working directory option is also kept.
+        """
+
+        # skipping the direct parent as the complete invocation/setup
+        # is manually done.
+        super(BaseArtifactRegistryRuntime, self).init_argparser(argparser)
+        init_argparser_common(argparser)
+
+        argparser.add_argument(
+            '-x', '--exit-first',
+            dest=KARMA_ABORT_ON_TEST_FAILURE, action='store_true',
+            help='abort on the first failed artifact',
+        )
+
+        self.init_argparser_package_names(
+            argparser, help='Python packages to verify artifacts for')
+
+    def run(self, argparser=None, package_names=[], **kwargs):
+        safe_defaults = {}
+        # grab only the safe defaults from kwargs
+        update_spec_for_karma(safe_defaults, **kwargs)
+        # TODO make this registry a specified value?
+        registry = get('calmjs.artifacts.tests')
+        result = True
+        for package in package_names:
+            # using the registry API to further inject additional
+            # parameters to the spec
+            for entry_point, toolchain, spec in registry.iter_builders_for(
+                    package):
+                # ensure any missing default values are applied
+                spec.update(safe_defaults)
+                prepare_spec_artifacts(spec)
+                registry.execute_builder(entry_point, toolchain, spec)
+                result = result and spec.get(KARMA_RETURN_CODE) == 0
+        return result
+
+
 class KarmaRuntime(Runtime, DriverRuntime):
     """
     The runtime class for karma
@@ -406,3 +453,4 @@ class KarmaRuntime(Runtime, DriverRuntime):
 # this will be registered to the karma specific thing.
 run = TestToolchainRuntime(KarmaToolchain())
 karma = KarmaRuntime(KarmaDriver.create())
+artifact_karma = KarmaArtifactRuntime()

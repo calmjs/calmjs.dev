@@ -906,6 +906,8 @@ class CliRuntimeTestCase(unittest.TestCase):
 
         def generic_tester(package_names, export_target):
             spec = Spec(
+                # this is required
+                export_target=export_target,
                 artifact_paths=[export_target],
                 test_package_names=package_names,
                 # typically, the toolchain test advice will be advised
@@ -928,6 +930,13 @@ class CliRuntimeTestCase(unittest.TestCase):
                 'artifact.js = calmjs_dev_tester:generic',
             ])),
         ), 'calmjs.dev', '1.0', working_dir=working_dir)
+
+        make_dummy_dist(self, (
+            ('entry_points.txt', '\n'.join([
+                '[calmjs.artifacts.tests]',
+                'missing.js = calmjs_dev_tester:generic',
+            ])),
+        ), 'missing', '1.0', working_dir=working_dir)
 
         # simply inject the "artifact" for this package into the
         # registry
@@ -981,3 +990,9 @@ class CliRuntimeTestCase(unittest.TestCase):
         ]))
 
         self.assertTrue(exists(report_dir))
+
+        # missing packages should also fail by default
+        stub_stdouts(self)
+        self.assertFalse(rt(['missing']))
+        self.assertIn('artifact not found:', sys.stderr.getvalue())
+        self.assertIn('missing.js', sys.stderr.getvalue())

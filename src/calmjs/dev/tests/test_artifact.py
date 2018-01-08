@@ -8,6 +8,7 @@ from types import ModuleType
 from pkg_resources import WorkingSet
 
 from calmjs import dist
+from calmjs.types.exceptions import ToolchainCancel
 from calmjs.registry import get
 from calmjs.toolchain import Spec
 
@@ -38,6 +39,7 @@ class ArtifactTestRegistryTestCase(unittest.TestCase):
         spec = Spec(karma_advice_group=None)
 
         def generic_tester(package_names, export_target):
+            spec['export_target'] = export_target
             return KarmaToolchain(), spec,
 
         tester_mod = ModuleType('calmjs_dev_tester')
@@ -61,14 +63,19 @@ class ArtifactTestRegistryTestCase(unittest.TestCase):
             'calmjs.artifacts.tests', _working_set=mock_ws)
 
         artifact_name = registry.get_artifact_filename('app', 'artifact.js')
-        # file not exist yet
-        self.assertFalse(registry.verify_export_target(artifact_name))
+        # it's an advice
+        verifier = registry.verify_export_target(artifact_name)
+        self.assertTrue(callable(verifier))
+
+        with self.assertRaises(ToolchainCancel):
+            # file not exist yet will cancel the execution
+            verifier(artifact_name)
 
         mkdir(dirname(artifact_name))
         with open(artifact_name, 'w') as fd:
             fd.write('console.log("test artifact");\n')
 
-        self.assertTrue(registry.verify_export_target(artifact_name))
+        self.assertTrue(verifier(artifact_name))
 
         registry.process_package('app')
 

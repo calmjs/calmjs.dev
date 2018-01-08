@@ -14,11 +14,18 @@ from logging import getLogger
 from calmjs.artifact import BaseArtifactRegistry
 from calmjs.artifact import extract_builder_result
 from calmjs.artifact import exists
+from calmjs.types.exceptions import ToolchainCancel
 
 from calmjs.dev.cli import KarmaDriver
 from calmjs.dev.toolchain import KarmaToolchain
 
 logger = getLogger(__name__)
+
+
+def verify_export_target(export_target):
+    if not exists(export_target):
+        raise ToolchainCancel("missing export_target '%s'")
+    return True
 
 
 class ArtifactTestRegistry(BaseArtifactRegistry):
@@ -31,7 +38,7 @@ class ArtifactTestRegistry(BaseArtifactRegistry):
             builder_result, toolchain_cls=KarmaToolchain)
 
     def verify_export_target(self, export_target):
-        return exists(export_target)
+        return verify_export_target
 
     def execute_builder(self, entry_point, toolchain, spec):
         """

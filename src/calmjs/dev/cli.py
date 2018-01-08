@@ -5,6 +5,7 @@ This module provides interface to the karma cli runtime.
 
 import logging
 import re
+from os.path import exists
 from os.path import join
 from os.path import realpath
 from subprocess import call
@@ -361,6 +362,14 @@ def karma_verify_package_artifacts(package_names=[], **kwargs):
             # ensure any missing default values are applied
             spec.update(safe_defaults)
             prepare_spec_artifacts(spec)
-            registry.execute_builder(entry_point, toolchain, spec)
-            result = result and spec.get(karma.KARMA_RETURN_CODE) == 0
+            artifact_exists = exists(spec['export_target'])
+            if not artifact_exists:
+                logger.warning(
+                    "artifact not found: %s", spec['export_target'])
+            else:
+                registry.execute_builder(entry_point, toolchain, spec)
+            result = (
+                result and artifact_exists and
+                spec.get(karma.KARMA_RETURN_CODE) == 0
+            )
     return result

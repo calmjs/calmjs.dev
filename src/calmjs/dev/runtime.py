@@ -135,7 +135,7 @@ def init_argparser_common(argparser):
     )
 
     argparser.add_argument(
-        '--test-package', default=[],
+        '--test-with-package', default=[],
         metavar='<package>[,<package>...]',
         dest=TEST_PACKAGE_NAMES, action=StoreDelimitedList,
         help='explicitly specify Python package(s) to gather JavaScript tests '
@@ -144,9 +144,30 @@ def init_argparser_common(argparser):
     )
 
     argparser.add_argument(
-        '--test-packages', default=[],
+        '--test-with-packages', default=[],
+        metavar='<package>[,<package>...]',
         dest=TEST_PACKAGE_NAMES, action=StoreDelimitedList,
         help=SUPPRESS,
+    )
+
+    # don't ever remove deprecation for --test-package, because it is
+    # a very confusing flag in this context - the message will always
+    # refer to the above, as the subject to be tested is provided, the
+    # package providing the tests to test the subject with is what this
+    # flag specifies, not the package to be tested.
+
+    argparser.add_argument(
+        '--test-package', default=[],
+        metavar='<package>[,<package>...]',
+        dest=TEST_PACKAGE_NAMES, action=StoreDelimitedList,
+        deprecation="please use '--test-with-package' instead",
+    )
+
+    argparser.add_argument(
+        '--test-packages', default=[],
+        metavar='<package>[,<package>...]',
+        dest=TEST_PACKAGE_NAMES, action=StoreDelimitedList,
+        deprecation="please use '--test-with-packages' instead",
     )
 
     argparser.add_argument(

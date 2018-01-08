@@ -209,14 +209,14 @@ class BaseRuntimeTestCase(unittest.TestCase):
 
         ns = argparser.parse_args([
             'fakekarma',
-            '--test-packages=pkg1', '--test-registries=dummy1',
+            '--test-with-packages=pkg1', '--test-registries=dummy1',
         ])
         self.assertEqual(ns.calmjs_test_registry_names, ['dummy1'])
         self.assertEqual(ns.test_package_names, ['pkg1'])
 
         ns = argparser.parse_args([
             'fakekarma',
-            '--test-packages=pkg1', '--test-registries=dummy1',
+            '--test-with-packages=pkg1', '--test-registries=dummy1',
             'fakerun',
         ])
         self.assertEqual(ns.calmjs_test_registry_names, ['dummy1'])
@@ -224,12 +224,38 @@ class BaseRuntimeTestCase(unittest.TestCase):
 
         ns = argparser.parse_args([
             'fakekarma',
-            '--test-packages=pkg1', '--test-registries=dummy1',
+            '--test-with-packages=pkg1', '--test-registries=dummy1',
             'fakerun',
-            '--test-package=pkg2', '--test-registry=dummy2',
+            '--test-with-package=pkg2', '--test-registry=dummy2',
         ])
         self.assertEqual(ns.calmjs_test_registry_names, ['dummy1', 'dummy2'])
         self.assertEqual(ns.test_package_names, ['pkg1', 'pkg2'])
+
+    def test_deprecation_test_package_flag(self):
+        make_dummy_dist(self, ((
+            'entry_points.txt',
+            '[calmjs.runtime]\n'
+            'fakekarma = calmjs.testing.mocks:krt\n'
+        ),), 'example.package', '1.0')
+        working_set = WorkingSet([self._calmjs_testing_tmpdir])
+
+        self.addCleanup(delattr, mocks, 'krt')
+        mocks.krt = KarmaRuntime(KarmaDriver(), working_set=working_set)
+        runtime = Runtime(working_set=working_set)
+        argparser = runtime.argparser
+
+        import warnings
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            ns = argparser.parse_args([
+                'fakekarma',
+                '--test-package=pkg1', '--test-registries=dummy1',
+            ])
+
+        self.assertIn(
+            "please use '--test-with-package' instead", str(w[0].message))
+        self.assertEqual(ns.calmjs_test_registry_names, ['dummy1'])
+        self.assertEqual(ns.test_package_names, ['pkg1'])
 
     def test_karma_runtime_arguments(self):
         stub_stdouts(self)
@@ -243,7 +269,7 @@ class BaseRuntimeTestCase(unittest.TestCase):
         result = rt([
             'run', '--artifact', artifact,
             '--build-dir', build_dir,
-            '--test-package', 'calmjs.dev',
+            '--test-with-package', 'calmjs.dev',
             '--extra-frameworks', 'my_framework',
             '--browser', 'Chromium,Firefox',
         ])
@@ -551,7 +577,7 @@ class CliRuntimeTestCase(unittest.TestCase):
         rt = KarmaRuntime(self.driver, working_set=working_set)
         result = rt([
             '--test-registry', 'calmjs.no_such_registry',
-            '--test-package', 'no_such_pkg', '-vv',
+            '--test-with-package', 'no_such_pkg', '-vv',
             '-I', 'null', '--export-target', target, '--build-dir', build_dir,
         ])
         self.assertIn('karma_config_path', result)
@@ -621,7 +647,7 @@ class CliRuntimeTestCase(unittest.TestCase):
             'run', '--artifact', artifact,
             '--build-dir', build_dir,
             '--test-registry', 'calmjs.dev.module.tests',
-            '--test-package', 'calmjs.dev',
+            '--test-with-package', 'calmjs.dev',
             '-vv',
         ])
         self.assertIn('karma_config_path', result)
@@ -659,7 +685,7 @@ class CliRuntimeTestCase(unittest.TestCase):
         rt([
             'run', '--artifact', pathsep.join([artifact, extra_artifact]),
             '--test-registry', 'calmjs.dev.module.tests',
-            '--test-package', 'calmjs.dev',
+            '--test-with-package', 'calmjs.dev',
             '-vv',
         ])
         logs = sys.stderr.getvalue()
@@ -689,7 +715,7 @@ class CliRuntimeTestCase(unittest.TestCase):
             'run',
             '--artifact', artifact, '--artifact', extra_artifact,
             '--test-registry', 'calmjs.dev.module.tests',
-            '--test-package', 'calmjs.dev',
+            '--test-with-package', 'calmjs.dev',
             '-vv',
         ])
         logs = sys.stderr.getvalue()
@@ -718,7 +744,7 @@ class CliRuntimeTestCase(unittest.TestCase):
             '--artifact', artifact, 'run',
             '--build-dir', build_dir,
             '--test-registry', 'calmjs.dev.module.tests',
-            '--test-package', 'calmjs.dev',
+            '--test-with-package', 'calmjs.dev',
             '--coverage', '--cover-artifact',
             '--cover-report-dir', coverage_dir,
         ])
@@ -762,7 +788,7 @@ class CliRuntimeTestCase(unittest.TestCase):
         result = rt([
             '--artifact', artifact, 'run',
             '--test-registry', 'calmjs.dev.module.tests',
-            '--test-package', 'calmjs.dev',
+            '--test-with-package', 'calmjs.dev',
             '--toolchain-package', 'example.package',
         ])
         self.assertIn('karma_config_path', result)
@@ -817,7 +843,7 @@ class CliRuntimeTestCase(unittest.TestCase):
         artifact = resource_filename('calmjs.dev', 'main.js')
         result = rt([
             'run', '--artifact', artifact,
-            '--test-package', 'calmjs.dev',
+            '--test-with-package', 'calmjs.dev',
             '--toolchain-package', 'example.package',
         ])
         self.assertIn('calmjs.dev', _called)

@@ -37,22 +37,23 @@ KARMA_CONF_JS = 'karma.conf.js'
 # note that the actual tool, with default dependencies, show that the
 # allowed values are clover, cobertura, html, json, json-summary, lcov,
 # lcovonly, none, teamcity, text, text-lcov, text-summary
-COVER_REPORT_TYPE_OPTIONS = {
-    'html': {
+COVER_REPORT_TYPES = (
+    ('html', {
         'subdir': 'html',
-    },
-    'lcov': {
+    }),
+    ('lcov', {
         'subdir': 'lcov',
-    },
-    'lcovonly': {
+    }),
+    ('lcovonly', {
         'file': 'coverage.lcov',
-    },
-    'json': {
+    }),
+    ('json', {
         'file': 'coverage.json',
-    },
-    'text': {
-    },
-}
+    }),
+    ('text', {
+    }),
+)
+COVER_REPORT_TYPE_OPTIONS = dict(COVER_REPORT_TYPES)
 DEFAULT_COVER_REPORT_TYPE_OPTIONS = ('html', 'json', 'lcov', 'text')
 
 
@@ -105,14 +106,17 @@ def build_coverage_reporter_config(report_key, report_dir, report_file):
 
 def build_coverage_reporters_config(report_keys, report_dir, report_file):
     reporters = []
-    for key in report_keys:
-        if key not in COVER_REPORT_TYPE_OPTIONS:
-            logger.warning(
-                "coverage reporter '%s' not supported", key)
+    report_set = set(report_keys)
+
+    # have to generate the listing in order, otherwise fun debugging
+    # happens
+    for key, option in COVER_REPORT_TYPES:
+        if key not in report_set:
             continue
 
+        report_set.remove(key)
         reporter = {}
-        reporter.update(COVER_REPORT_TYPE_OPTIONS[key])
+        reporter.update(option)
 
         # while 'subdir' is as documented, file... doesn't go there.
         if 'file' in reporter:
@@ -120,6 +124,10 @@ def build_coverage_reporters_config(report_keys, report_dir, report_file):
         # stitch the key back in as the type
         reporter['type'] = key
         reporters.append(reporter)
+
+    for unsupported in report_set:
+        logger.warning(
+            "coverage reporter '%s' not supported", unsupported)
 
     return {
         'dir': report_dir,

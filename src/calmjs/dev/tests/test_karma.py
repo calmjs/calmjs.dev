@@ -47,6 +47,26 @@ class BaseConfigTestCase(unittest.TestCase):
             }]
         }, reporters)
 
+    def test_coverage_reporter_builders_text(self):
+        # because istanbul/karma/whatever/javascript is stupid and will
+        # do the wrong thing and break silently if the ordering is done
+        # in a way it doesn't like
+        basedir = mkdtemp(self)
+        reporters = karma.build_coverage_reporters_config(
+            ['text', 'lcovonly', 'json'], basedir, 'somefile')
+        self.assertEqual({
+            'dir': basedir,
+            'reporters': [{
+                'type': 'lcovonly',
+                'file': join(basedir, 'coverage.lcov'),
+            }, {
+                'type': 'json',
+                'file': join(basedir, 'coverage.json'),
+            }, {
+                'type': 'text',
+            }]
+        }, reporters)
+
     def test_coverage_reporter_builder_invalid(self):
         with pretty_logging(logger='calmjs.dev', stream=StringIO()) as s:
             reporters = karma.build_coverage_reporter_config(

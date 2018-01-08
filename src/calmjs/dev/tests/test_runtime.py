@@ -31,11 +31,11 @@ from calmjs.dev import cli
 from calmjs.dev.cli import KarmaDriver
 from calmjs.dev.toolchain import TestToolchain
 from calmjs.dev.toolchain import KarmaToolchain
+from calmjs.dev.toolchain import prepare_spec_artifacts
+from calmjs.dev.toolchain import update_spec_for_karma
 from calmjs.dev.artifact import ArtifactTestRegistry
 from calmjs.dev.karma import DEFAULT_COVER_REPORT_TYPE_OPTIONS
-from calmjs.dev.runtime import prepare_spec_artifacts
 from calmjs.dev.runtime import init_argparser_common
-from calmjs.dev.runtime import update_spec_for_karma
 from calmjs.dev.runtime import KarmaRuntime
 from calmjs.dev.runtime import TestToolchainRuntime
 from calmjs.dev.runtime import KarmaArtifactRuntime

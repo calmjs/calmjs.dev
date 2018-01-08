@@ -7,9 +7,7 @@ select the resulting spec targets for usage
 
 import logging
 from itertools import chain
-from os.path import exists
 from os.path import pathsep
-from os.path import realpath
 from argparse import SUPPRESS
 
 from calmjs.argparse import StoreDelimitedList
@@ -24,9 +22,10 @@ from calmjs.runtime import BaseArtifactRegistryRuntime
 from calmjs.runtime import ToolchainRuntime
 from calmjs.runtime import DriverRuntime
 from calmjs.runtime import Runtime
-from calmjs.registry import get
 
 from calmjs.dev.cli import KarmaDriver
+from calmjs.dev.cli import karma_verify_package_artifacts
+from calmjs.dev.toolchain import prepare_spec_from_runtime
 from calmjs.dev.toolchain import KarmaToolchain
 from calmjs.dev.toolchain import COVERAGE_ENABLE
 from calmjs.dev.toolchain import COVER_REPORT_TYPES
@@ -41,77 +40,12 @@ from calmjs.dev.karma import DEFAULT_COVER_REPORT_TYPE_OPTIONS
 from calmjs.dev.karma import KARMA_ABORT_ON_TEST_FAILURE
 from calmjs.dev.karma import KARMA_BROWSERS
 from calmjs.dev.karma import KARMA_EXTRA_FRAMEWORKS
-from calmjs.dev.karma import KARMA_RETURN_CODE
 
 logger = logging.getLogger(__name__)
 
 CALMJS_DEV_RUNTIME_KARMA = 'calmjs.dev.runtime.karma'
 
 __all__ = ['KarmaRuntime', 'karma']
-
-
-def prepare_spec_artifacts(spec):
-
-    def checkpaths(paths):
-        for p in paths:
-            realp = realpath(p)
-            if not exists(realp):
-                logger.warning(
-                    "specified artifact '%s' does not exists", realp)
-                continue
-            logger.debug("specified artifact '%s' found", realp)
-            yield realp
-
-    # do not sort this list, it is provided with a specific order
-    if spec.get(ARTIFACT_PATHS):
-        # do this to conform to usage for artifact_paths in spec.
-        spec[ARTIFACT_PATHS] = list(checkpaths(spec.get(ARTIFACT_PATHS)))
-
-
-def update_spec_for_karma(spec, **kwargs):
-    # This method assigns default values of the specific type to
-    # the spec.  Ensure they are added correctly.
-    post_process_group = (
-        # default value, and keys to be assigned that
-        (None, [
-            KARMA_ABORT_ON_TEST_FAILURE,
-            COVERAGE_ENABLE,
-            COVER_REPORT_DIR,
-            COVER_REPORT_FILE,
-            COVER_ARTIFACT,
-            COVER_BUNDLE,
-            COVER_TEST,
-            NO_WRAP_TESTS,
-        ]),
-        # For all list types.
-        ([], [
-            ARTIFACT_PATHS,
-            CALMJS_TEST_REGISTRY_NAMES,
-            COVER_REPORT_TYPES,
-            TEST_PACKAGE_NAMES,
-            KARMA_BROWSERS,
-            KARMA_EXTRA_FRAMEWORKS,
-        ]),
-    )
-    for defaultvalue, post_process in post_process_group:
-        for key in post_process:
-            if kwargs.get(key, defaultvalue) != defaultvalue:
-                spec[key] = kwargs[key]
-            else:
-                # pop them out from spec
-                spec.pop(key, None)
-
-
-def prepare_spec_from_runtime(runtime, **kwargs):
-    spec = runtime.kwargs_to_spec(**kwargs)
-
-    # The above runtime specific method MAY strip off all keys that
-    # it doesn't understand; so for the critical keys that the karma
-    # runtime require/supply, plug them back in like so:
-    update_spec_for_karma(spec, **kwargs)
-    prepare_spec_artifacts(spec)
-
-    return spec
 
 
 def init_argparser_common(argparser):
@@ -378,23 +312,7 @@ class KarmaArtifactRuntime(BaseArtifactRegistryRuntime):
             argparser, help='Python packages to verify artifacts for')
 
     def run(self, argparser=None, package_names=[], **kwargs):
-        safe_defaults = {}
-        # grab only the safe defaults from kwargs
-        update_spec_for_karma(safe_defaults, **kwargs)
-        # TODO make this registry a specified value?
-        registry = get('calmjs.artifacts.tests')
-        result = True
-        for package in package_names:
-            # using the registry API to further inject additional
-            # parameters to the spec
-            for entry_point, toolchain, spec in registry.iter_builders_for(
-                    package):
-                # ensure any missing default values are applied
-                spec.update(safe_defaults)
-                prepare_spec_artifacts(spec)
-                registry.execute_builder(entry_point, toolchain, spec)
-                result = result and spec.get(KARMA_RETURN_CODE) == 0
-        return result
+        return karma_verify_package_artifacts(package_names, **kwargs)
 
 
 class KarmaRuntime(Runtime, DriverRuntime):

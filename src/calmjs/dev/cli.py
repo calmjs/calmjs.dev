@@ -12,6 +12,8 @@ from subprocess import call
 from calmjs.exc import AdviceAbort
 from calmjs.exc import ToolchainAbort
 
+from calmjs.registry import get
+
 from calmjs.toolchain import BEFORE_LINK
 from calmjs.toolchain import BEFORE_TEST
 from calmjs.toolchain import AFTER_TEST
@@ -49,6 +51,8 @@ from calmjs.dev.toolchain import TEST_FILENAME_PREFIX_DEFAULT
 from calmjs.dev.toolchain import TEST_COVERED_ARTIFACT_PATHS
 from calmjs.dev.toolchain import TEST_COVERED_TEST_PATHS
 from calmjs.dev.toolchain import TEST_COVERED_BUILD_DIR_PATHS
+from calmjs.dev.toolchain import prepare_spec_artifacts
+from calmjs.dev.toolchain import update_spec_for_karma
 
 logger = logging.getLogger(__name__)
 
@@ -340,3 +344,23 @@ class KarmaDriver(NodeDriver):
 
         self.setup_toolchain_spec(toolchain, spec)
         toolchain(spec)
+
+
+def karma_verify_package_artifacts(package_names=[], **kwargs):
+    safe_defaults = {}
+    # grab only the safe defaults from kwargs
+    update_spec_for_karma(safe_defaults, **kwargs)
+    # TODO make this registry a specified value?
+    registry = get('calmjs.artifacts.tests')
+    result = True
+    for package in package_names:
+        # using the registry API to further inject additional
+        # parameters to the spec
+        for entry_point, toolchain, spec in registry.iter_builders_for(
+                package):
+            # ensure any missing default values are applied
+            spec.update(safe_defaults)
+            prepare_spec_artifacts(spec)
+            registry.execute_builder(entry_point, toolchain, spec)
+            result = result and spec.get(karma.KARMA_RETURN_CODE) == 0
+    return result

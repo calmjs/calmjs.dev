@@ -3,45 +3,45 @@ matrix:
   allow_failures:
     - os: osx
     - python: 3.7-dev
-    - env: TRAVIS_NODE_VERSION=7.4
+    - env: TRAVIS_NODE_VERSION=9
   include:
     - language: python
       python: 2.7
       env: TRAVIS_NODE_VERSION=4.6
     - language: python
       python: 3.3
-      env: TRAVIS_NODE_VERSION=4.6
+      env: TRAVIS_NODE_VERSION=4.8
     - language: python
       python: 3.4
-      env: TRAVIS_NODE_VERSION=4.6
+      env: TRAVIS_NODE_VERSION=6.12
     - language: python
       python: 3.5
-      env: TRAVIS_NODE_VERSION=6.9
+      env: TRAVIS_NODE_VERSION=6.12
     - language: python
       python: 3.6
-      env: TRAVIS_NODE_VERSION=6.9
+      env: TRAVIS_NODE_VERSION=8.9
     - language: python
       python: 3.7-dev
-      env: TRAVIS_NODE_VERSION=7.4
+      env: TRAVIS_NODE_VERSION=9
     - language: python
       python: pypy
-      env: TRAVIS_NODE_VERSION=4.6
+      env: TRAVIS_NODE_VERSION=4.8
     - language: python
       python: pypy3
       env: TRAVIS_NODE_VERSION=6.9
     # test different versions of Node.js on osx
     - language: node_js
-      node_js: 4.5
+      node_js: 4.8
       os: osx
-      env: TRAVIS_PYTHON_VERSION=3.4.5
+      env: TRAVIS_PYTHON_VERSION=3.4.7
     - language: node_js
-      node_js: 6.9
+      node_js: 6.12
       os: osx
-      env: TRAVIS_PYTHON_VERSION=3.5.2
+      env: TRAVIS_PYTHON_VERSION=3.5.4
     - language: node_js
-      node_js: 7.4
+      node_js: 8.9
       os: osx
-      env: TRAVIS_PYTHON_VERSION=3.6.0
+      env: TRAVIS_PYTHON_VERSION=3.6.3
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
@@ -66,17 +66,14 @@ before_install:
   - npm --version
 
 install:
-  - pip install nose coverage flake8
+  - pip install coverage flake8
   # must be installed first, as this writes package_json into egg-info
-  - pip install calmjs
+  - pip install -U calmjs
   - python setup.py develop
 script:
   - flake8 setup.py src
-  - nosetests --with-coverage --cover-package=calmjs.dev --with-doctest
+  - coverage run --include=src/* -m unittest calmjs.dev.tests.make_suite
   - coverage report -m
-# Alternatively without nose
-#  - coverage run --include=src/* -m unittest calmjs.dev.tests.make_suite
-#  - coverage report -m
 after_success:
   # only submit coverage when testing under linux.
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then

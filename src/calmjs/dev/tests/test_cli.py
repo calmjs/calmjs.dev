@@ -70,6 +70,25 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
         )[0])
         self.assertTrue(isinstance(result, dict))
 
+    def test_valid_cover_file(self):
+        driver = cli.KarmaDriver()
+        self.assertTrue(driver._valid_cover_file('something.js'))
+        self.assertTrue(driver._valid_cover_file('test_something.js'))
+        self.assertFalse(driver._valid_cover_file('test_something.txt'))
+        self.assertFalse(driver._valid_cover_file('__something__.js'))
+        self.assertFalse(driver._valid_cover_file('dir/__something__/mod.js'))
+
+    def test_filter_cover_path(self):
+        def custom_filter(path):
+            return path == 'custom.js'
+        driver = cli.KarmaDriver()
+        spec = Spec()
+        self.assertTrue(driver.filter_cover_path(spec, 'something.js'))
+        self.assertFalse(driver.filter_cover_path(spec, 'filtered.txt'))
+        spec['cover_path_filter'] = custom_filter
+        self.assertFalse(driver.filter_cover_path(spec, 'something.js'))
+        self.assertTrue(driver.filter_cover_path(spec, 'custom.js'))
+
     def test_apply_preprocessors_config_null(self):
         driver = cli.KarmaDriver()
         config = {}
@@ -284,6 +303,49 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             'type': 'html',
             'dir': realpath('coverage'),
         }, config['coverageReporter'])
+
+    def test_coverage_apply(self):
+        spec = Spec(
+            coverage_enable=True,
+        )
+        driver = cli.KarmaDriver()
+        config = {}
+        driver._apply_coverage_config(spec, config, [
+            'some_file.js', 'readme.txt'], ['test_path.js', 'foo.txt'])
+        self.assertEqual(config['preprocessors'], {
+            'some_file.js': ['coverage'],
+        })
+
+    def test_coverage_apply_cover_test(self):
+        spec = Spec(
+            coverage_enable=True,
+            cover_test=True,
+        )
+        driver = cli.KarmaDriver()
+        config = {}
+        driver._apply_coverage_config(spec, config, [
+            'some_file.js', 'readme.txt'], ['test_path.js', 'foo.txt'])
+        self.assertEqual(spec['test_covered_test_paths'], {'test_path.js'})
+        self.assertEqual(config['preprocessors'], {
+            'some_file.js': ['coverage'],
+            'test_path.js': ['coverage'],
+        })
+
+    def test_coverage_apply_custom_filter(self):
+        spec = Spec(
+            coverage_enable=True,
+            cover_test=True,
+            cover_path_filter=lambda p: p.endswith('.txt'),
+        )
+        driver = cli.KarmaDriver()
+        config = {}
+        driver._apply_coverage_config(spec, config, [
+            'some_file.js', 'readme.txt'], ['test_path.js', 'foo.txt'])
+        self.assertEqual(spec['test_covered_test_paths'], {'foo.txt'})
+        self.assertEqual(config['preprocessors'], {
+            'readme.txt': ['coverage'],
+            'foo.txt': ['coverage'],
+        })
 
     def test_create_config_with_coverage_standard_no_wrap(self):
         # this is usually provided by the toolchains themselves

@@ -28,6 +28,8 @@ COVERAGE_TYPE = 'coverage_type'
 COVER_ARTIFACT = 'cover_artifact'
 # flag for including coverage report for bundled modules
 COVER_BUNDLE = 'cover_bundle'
+# an optional filter function to filter out what paths to be covered.
+COVER_PATH_FILTER = 'cover_path_filter'
 # the dir to write the coverage report to
 COVER_REPORT_DIR = 'cover_report_dir'
 # the file to write the coverage report to for selected reporters.

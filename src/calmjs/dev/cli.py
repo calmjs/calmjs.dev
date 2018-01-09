@@ -40,6 +40,7 @@ from calmjs.dev.toolchain import COVERAGE_ENABLE
 from calmjs.dev.toolchain import COVERAGE_TYPE
 from calmjs.dev.toolchain import COVER_ARTIFACT
 from calmjs.dev.toolchain import COVER_BUNDLE
+from calmjs.dev.toolchain import COVER_PATH_FILTER
 from calmjs.dev.toolchain import COVER_REPORT_DIR
 from calmjs.dev.toolchain import COVER_REPORT_FILE
 from calmjs.dev.toolchain import COVER_TEST
@@ -146,7 +147,11 @@ class KarmaDriver(NodeDriver):
         return result
 
     def _valid_cover_file(self, path):
-        return path.endswith('js') and not re.search('__\w*__', path)
+        return path.endswith('js') and not re.search('__\\w*__', path)
+
+    def filter_cover_path(self, spec, path):
+        path_filter = spec.get(COVER_PATH_FILTER, self._valid_cover_file)
+        return path_filter(path)
 
     def _apply_coverage_reporters(self, spec, config):
         # for the coverageReporter key
@@ -187,14 +192,14 @@ class KarmaDriver(NodeDriver):
 
         spec[TEST_COVERED_BUILD_DIR_PATHS] = set(
             path for path in paths
-            if self._valid_cover_file(path)
+            if self.filter_cover_path(spec, path)
         )
 
         if spec.get(COVER_TEST):
             paths.update(test_module_paths)
             spec[TEST_COVERED_TEST_PATHS] = set(
                 path for path in test_module_paths
-                if self._valid_cover_file(path)
+                if self.filter_cover_path(spec, path)
             )
 
         if spec.get(COVER_ARTIFACT):
@@ -202,14 +207,14 @@ class KarmaDriver(NodeDriver):
             paths.update(artifact_paths)
             spec[TEST_COVERED_ARTIFACT_PATHS] = set(
                 path for path in artifact_paths
-                if self._valid_cover_file(path)
+                if self.filter_cover_path(spec, path)
             )
 
         # finally, modify the config
-        config['reporters'] = list(config['reporters']) + ['coverage']
+        config['reporters'] = list(config.get('reporters', [])) + ['coverage']
         self._apply_preprocessors_config(config, {
             path: ['coverage']
-            for path in paths if self._valid_cover_file(path)
+            for path in paths if self.filter_cover_path(spec, path)
         })
         self._apply_coverage_reporters(spec, config)
 

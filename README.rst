@@ -228,7 +228,7 @@ package by invoking:
 
     $ calmjs karma run \
         --artifact=bundle.js \
-        --test-package=example.package
+        --test-with-package=example.package
 
 However, for more complicated toolchains and packages this will probably
 not work, as the generation of these artifacts typically involve extra
@@ -241,7 +241,7 @@ this is necessary.  The full command may be like so:
 
     $ calmjs karma run \
         --artifact=bundle.js \
-        --test-package=example.package \
+        --test-with-package=example.package \
         --toolchain-package=calmjs.rjs
 
 As with all |calmjs| tools, more help can be acquired by appending
@@ -268,14 +268,56 @@ which requires ``nunja``:
 .. code:: sh
 
     $ calmjs rjs nunja
-    $ calmjs karma --cover-artifact --artifact=nunja.js --coverage \
-        --cover-test rjs nunja.stock --source-map-method=explicit
+    $ calmjs karma --coverage --artifact=nunja.js --cover-test \
+        rjs nunja.stock --sourcepath-method=explicit
 
 The first command produces the artifact file ``nunja.js``, which is then
 immediately used by the subsequent command which explicitly filters out
 all other sources not specified.  Otherwise, the standard way is that
 the dependencies will also be included into the test and the resulting
-artifact file.
+artifact file.  The ``--cover-test`` flag denotes that the test coverage
+reporting should be extended to the tests provided.  Similarly, enabling
+the ``--cover-artifact`` flag will extend coverage reporting to the
+artifacts included for the test run.
+
+Testing of prebuilt artifacts defined for packages
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Package level artifacts defined and generated through the tools that
+make use of the ``calmjs.artifacts`` registry system may be tested using
+the ``calmjs artifact karma`` tool if the artifact entry in the
+``calmjs.artifacts`` registry also has a corresponding entry in the
+``calmjs.artifacts.tests`` registry.  Typically, the module that the
+entry point references for the artifact entry will be documented by the
+toolchain package that supplied the builder entry.  If the artifacts
+in the package to be tested are created and the package has well-defined
+entries suitable for testing purpose, the following command may be
+executed to test the defined and generated artifacts:
+
+.. code:: sh
+
+    $ calmjs artifact karma example.package
+
+There are cases where the test execution may require sourcing tests from
+dependencies; this use-case is especially true for dependents that want
+to ensure that their potential changes to their upstream implementation
+do not impact existing functionality negatively.  The
+``--test-with-package`` flag may be specified for this:
+
+.. code:: sh
+
+    $ calmjs artifact karma example.package \
+        --test-with-package example.dependent
+
+The above command basically use karma to test the artifacts defined in
+``example.package`` with the tests provided by the package
+``example.dependent``.
+
+Note that ``--test-with-package`` flag typically overrides the list of
+source packages that will provide the tests to be tested against the
+artifact.  Extra artifacts may be also specified with the ``--artifact``
+flag; specified artifacts will be prepended to the list of included
+artifacts for the test execution.
 
 
 Troubleshooting

@@ -4,8 +4,18 @@ Changelog
 2.0.0 (unreleased)
 ------------------
 
-- Migration to calmjs-3.0.0
-- Track the paths that are covered in the spec.
+- Migration to the calmjs-3.0.0 API.
+- The paths that are covered by the test coverage report are now
+  recorded in the Spec as part of the test execution workflow through
+  the KarmaDriver.
+- Provide framework and command for testing of predefined artifacts
+  generated for packages defined for the ``calmjs.artifacts`` registry.
+- Implemented ``--cover-report-type`` flag to support the specification
+  of multiple coverage report types to be generated.
+- Deprecated ``--coverage-type`` flag, as it is incosistently named and
+  that ``--cover-report-type`` is implemented to supercede this.
+- Deprecated ``--test-package`` flag in favor of ``--test-with-package``
+  for more clarity about the intention of that flag.
 
 1.1.0 (2017-08-10)
 ------------------

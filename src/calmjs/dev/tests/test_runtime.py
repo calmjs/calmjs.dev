@@ -3,9 +3,11 @@ import unittest
 import os
 import sys
 import json
+from os.path import basename
 from os.path import dirname
 from os.path import exists
 from os.path import join
+from os.path import normpath
 from os.path import pathsep
 from textwrap import dedent
 from types import ModuleType
@@ -740,9 +742,9 @@ class CliRuntimeTestCase(unittest.TestCase):
         # use the full blown runtime
         rt = KarmaRuntime(self.driver)
         # the artifact in our case is identical to the source file
-        artifact = resource_filename('calmjs.dev', 'main.js')
+        artifact_fn = resource_filename('calmjs.dev', 'main.js')
         result = rt([
-            '--artifact', artifact, 'run',
+            '--artifact', artifact_fn, 'run',
             '--build-dir', build_dir,
             '--test-registry', 'calmjs.dev.module.tests',
             '--test-with-package', 'calmjs.dev',
@@ -750,21 +752,24 @@ class CliRuntimeTestCase(unittest.TestCase):
             '--cover-report-dir', coverage_dir,
         ])
         self.assertIn('karma_config_path', result)
-        self.assertEqual(result['artifact_paths'], [artifact])
+        self.assertEqual(result['artifact_paths'], [artifact_fn])
         self.assertTrue(exists(result['karma_config_path']))
         # should exit cleanly
         self.assertNotIn(
             "karma exited with return code 1", sys.stderr.getvalue())
-        self.assertIn(artifact, result['karma_config']['preprocessors'])
+        self.assertIn(artifact_fn, result['karma_config']['preprocessors'])
         self.assertTrue(exists(coverage_dir))
 
         # verify that the coverage report actually got generated
         with open(join(coverage_dir, 'coverage.json')) as fd:
-            self.assertIn(artifact, json.load(fd))
-        with open(join(coverage_dir, 'lcov', 'lcov.info')) as fd:
-            self.assertIn(artifact, fd.read())
+            self.assertIn(normpath(artifact_fn), {
+                normpath(k): v for k, v in json.load(fd).items()
+            })
 
-    def test_karma_runtime_run_artifact_cover_report_type_text_lcov(self):
+        with open(join(coverage_dir, 'lcov', 'lcov.info')) as fd:
+            self.assertIn(basename(artifact_fn), fd.read())
+
+    def create_coverage_report(self, report_type):
         stub_stdouts(self)
         self.addCleanup(
             root_registry.records.pop, 'calmjs.dev.module.tests', None)
@@ -785,7 +790,7 @@ class CliRuntimeTestCase(unittest.TestCase):
             '--test-registry', 'calmjs.dev.module.tests',
             '--test-with-package', 'calmjs.dev',
             '--coverage', '--cover-artifact',
-            '--cover-report-type=text,lcov',
+            '--cover-report-type', report_type,
             '--cover-report-dir', coverage_dir,
         ])
         self.assertIn('karma_config_path', result)
@@ -797,11 +802,43 @@ class CliRuntimeTestCase(unittest.TestCase):
         self.assertIn(artifact_fn, result['karma_config']['preprocessors'])
         self.assertTrue(exists(coverage_dir))
 
+        return coverage_dir, artifact_fn
+
+    def test_karma_runtime_run_artifact_cover_report_type_text_lcov(self):
+        coverage_dir, artifact_fn = self.create_coverage_report('text,lcov')
         # shouldn't be generated.
         self.assertFalse(exists(join(coverage_dir, 'coverage.json')))
         # verify that the coverage report actually got generated
         with open(join(coverage_dir, 'lcov', 'lcov.info')) as fd:
-            self.assertIn(artifact_fn, fd.read())
+            self.assertIn(basename(artifact_fn), fd.read())
+
+    def test_karma_runtime_run_artifact_cover_report_type_lcov_text(self):
+        coverage_dir, artifact_fn = self.create_coverage_report('lcov,text')
+        # shouldn't be generated.
+        self.assertFalse(exists(join(coverage_dir, 'coverage.json')))
+        # verify that the coverage report actually got generated
+        with open(join(coverage_dir, 'lcov', 'lcov.info')) as fd:
+            self.assertIn(basename(artifact_fn), fd.read())
+
+    def test_karma_runtime_run_artifact_cover_report_type_text_json(self):
+        coverage_dir, artifact_fn = self.create_coverage_report('text,json')
+        # shouldn't be generated.
+        self.assertFalse(exists(join(coverage_dir, 'lcov', 'lcov.info')))
+        # verify that the coverage report actually got generated
+        with open(join(coverage_dir, 'coverage.json')) as fd:
+            self.assertIn(normpath(artifact_fn), {
+                normpath(k): v for k, v in json.load(fd).items()
+            })
+
+    def test_karma_runtime_run_artifact_cover_report_type_json_text(self):
+        coverage_dir, artifact_fn = self.create_coverage_report('json,text')
+        # shouldn't be generated.
+        self.assertFalse(exists(join(coverage_dir, 'lcov', 'lcov.info')))
+        # verify that the coverage report actually got generated
+        with open(join(coverage_dir, 'coverage.json')) as fd:
+            self.assertIn(normpath(artifact_fn), {
+                normpath(k): v for k, v in json.load(fd).items()
+            })
 
     def test_karma_runtime_run_toolchain_package(self):
         def cleanup():

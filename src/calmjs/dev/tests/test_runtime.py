@@ -939,7 +939,7 @@ class CliRuntimeTestCase(unittest.TestCase):
         self.assertIn(
             'calmjs/dev/tests/test_main', result['test_module_paths_map'])
 
-    def test_artifact_verify(self):
+    def setup_karma_artifact_runtime(self):
 
         def generic_tester(package_names, export_target):
             spec = Spec(
@@ -957,6 +957,8 @@ class CliRuntimeTestCase(unittest.TestCase):
         tester_mod.generic = generic_tester
 
         self.addCleanup(sys.modules.pop, 'calmjs_dev_tester')
+        self.addCleanup(
+            root_registry.records.pop, 'calmjs.dev.module.tests', None)
         sys.modules['calmjs_dev_tester'] = tester_mod
 
         working_dir = mkdtemp(self)
@@ -995,29 +997,52 @@ class CliRuntimeTestCase(unittest.TestCase):
         root_registry.records['calmjs.artifacts.tests'] = registry
 
         # use the verify artifact runtime directly
-        rt = KarmaArtifactRuntime()
+        return KarmaArtifactRuntime()
 
+    def test_artifact_verify_fail_continue(self):
         # since there is a failure test case
         stub_stdouts(self)
+        rt = self.setup_karma_artifact_runtime()
         self.assertFalse(rt(['calmjs.dev']))
         self.assertIn('continuing as specified', sys.stderr.getvalue())
 
+    def test_artifact_verify_fail_exit_first(self):
         # should not explode if the abort is triggered
         stub_stdouts(self)
+        rt = self.setup_karma_artifact_runtime()
         self.assertFalse(rt(['calmjs.dev', '-x']))
         self.assertIn(
             'terminating due to expected unrecoverable condition',
             sys.stderr.getvalue()
         )
 
+    def test_artifact_verify_success(self):
+        # should not explode if the abort is triggered
         # manipulate the registry to remove the fail test
+        stub_stdouts(self)
+        rt = self.setup_karma_artifact_runtime()
         reg = root_registry.get('calmjs.dev.module.tests')
         reg.records['calmjs.dev.tests'].pop('calmjs/dev/tests/test_fail', '')
 
         # should finally pass
         self.assertTrue(rt(['calmjs.dev']))
 
+    def test_artifact_verify_manual(self):
+        # not using the runtime but use it to setup the test environment
+        self.setup_karma_artifact_runtime()
+        # manually invoke the cli API directly
+        self.assertFalse(cli.karma_verify_package_artifacts(['calmjs.dev']))
+        # try again after removing the fail test
+        reg = root_registry.get('calmjs.dev.module.tests')
+        reg.records['calmjs.dev.tests'].pop('calmjs/dev/tests/test_fail', '')
+        self.assertTrue(cli.karma_verify_package_artifacts(['calmjs.dev']))
+
+    def test_artifact_verify_success_report(self):
+        stub_stdouts(self)
+        rt = self.setup_karma_artifact_runtime()
         report_dir = join(mkdtemp(self), 'reports')
+        reg = root_registry.get('calmjs.dev.module.tests')
+        reg.records['calmjs.dev.tests'].pop('calmjs/dev/tests/test_fail', '')
         # also ensure that the options
         self.assertTrue(rt([
             'calmjs.dev',
@@ -1028,8 +1053,60 @@ class CliRuntimeTestCase(unittest.TestCase):
 
         self.assertTrue(exists(report_dir))
 
+    def test_artifact_verify_fail_at_missing_artifact(self):
         # missing packages should also fail by default
         stub_stdouts(self)
+        rt = self.setup_karma_artifact_runtime()
         self.assertFalse(rt(['missing']))
         self.assertIn('artifact not found:', sys.stderr.getvalue())
         self.assertIn('missing.js', sys.stderr.getvalue())
+
+    def test_artifact_verify_fail_at_replacement(self):
+        # missing packages should also fail by default
+        stub_stdouts(self)
+        rt = self.setup_karma_artifact_runtime()
+        self.assertFalse(rt([
+            '-vv', 'calmjs.dev', '--test-with-package', 'missing'
+        ]))
+        self.assertIn("spec['test_package_names'] was", sys.stderr.getvalue())
+        self.assertIn("calmjs.dev'] replaced with", sys.stderr.getvalue())
+        self.assertIn("missing']", sys.stderr.getvalue())
+
+    def test_artifact_verify_extra_artifacts(self):
+        # this one is provided only as convenience; this may be useful
+        # for builders that construct a partial artifacts but using a
+        # test rule that doesn't provide some requirements, or for
+        # testing whether inclusion of that other artifact will cause
+        # interference with the expected functionality of the artifact
+        # to be tested with.
+
+        extra_js = join(mkdtemp(self), 'extra.js')
+        extra_test = join(mkdtemp(self), 'test_extra.js')
+
+        with open(extra_js, 'w') as fd:
+            fd.write('var extra = {value: "artifact"};')
+
+        with open(extra_test, 'w') as fd:
+            fd.write(dedent("""
+            'use strict';
+
+            describe('emulated extra test', function() {
+                it('extra artifact provided', function() {
+                    expect(window.extra.value).to.equal("artifact");
+                });
+            });
+            """.strip()))
+
+        stub_stdouts(self)
+        rt = self.setup_karma_artifact_runtime()
+        # remove the fail test.
+        reg = root_registry.get('calmjs.dev.module.tests')
+        reg.records['calmjs.dev.tests'].pop('calmjs/dev/tests/test_fail', '')
+        # inject our extra test to ensure the artifact that got added
+        # still gets tested.
+        reg.records['calmjs.dev.tests'][
+            'calmjs/dev/tests/test_extra'] = extra_test
+        self.assertTrue(rt(['-vv', '--artifact', extra_js, 'calmjs.dev']))
+        stderr = sys.stderr.getvalue()
+        self.assertIn("specified artifact '%s' found" % extra_js, stderr)
+        self.assertIn("artifact.js' found", stderr)

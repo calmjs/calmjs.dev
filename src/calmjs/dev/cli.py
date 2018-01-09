@@ -27,6 +27,7 @@ from calmjs.toolchain import GENERATE_SOURCE_MAP
 from calmjs.toolchain import SOURCE_PACKAGE_NAMES
 from calmjs.toolchain import TEST_PACKAGE_NAMES
 from calmjs.toolchain import TEST_MODULE_PATHS_MAP
+from calmjs.toolchain import dict_update_overwrite_check
 
 from calmjs.cli import NodeDriver
 from calmjs.cli import get_bin_version
@@ -348,9 +349,11 @@ class KarmaDriver(NodeDriver):
 
 
 def karma_verify_package_artifacts(package_names=[], **kwargs):
-    safe_defaults = {}
-    # grab only the safe defaults from kwargs
-    update_spec_for_karma(safe_defaults, **kwargs)
+    extra_arguments = {}
+    # process the extra arguments such that the "default" values are
+    # stripped from the extra arguments to prevent them from being
+    # needlessly applied later.
+    update_spec_for_karma(extra_arguments, **kwargs)
     # TODO make this registry a specified value?
     registry = get('calmjs.artifacts.tests')
     result = True
@@ -359,8 +362,17 @@ def karma_verify_package_artifacts(package_names=[], **kwargs):
         # parameters to the spec
         for entry_point, toolchain, spec in registry.iter_builders_for(
                 package):
-            # ensure any missing default values are applied
-            spec.update(safe_defaults)
+            # manually merge any extra arguments that should be merged
+            spec[ARTIFACT_PATHS].extend(
+                extra_arguments.pop(ARTIFACT_PATHS, []))
+
+            # ensure remaining extra arguments are applied, but note
+            # down values that have been overwritten.
+            overwritten = dict_update_overwrite_check(spec, extra_arguments)
+            for key, old, new in overwritten:
+                logger.debug(
+                    "spec['%s'] was %s replaced with %s", key, old, new)
+
             prepare_spec_artifacts(spec)
             artifact_exists = exists(spec['export_target'])
             if not artifact_exists:

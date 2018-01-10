@@ -943,11 +943,9 @@ class CliRuntimeTestCase(unittest.TestCase):
 
     def setup_karma_artifact_runtime(self):
 
-        def generic_tester(package_names, export_target):
+        def export_target_only(package_names, export_target):
             spec = Spec(
-                # this is required
                 export_target=export_target,
-                artifact_paths=[export_target],
                 test_package_names=package_names,
                 # typically, the toolchain test advice will be advised
                 # to the spec which will then set these up.
@@ -955,8 +953,14 @@ class CliRuntimeTestCase(unittest.TestCase):
             )
             return KarmaToolchain(), spec,
 
+        def generic_tester(package_names, export_target):
+            toolchain, spec = export_target_only(package_names, export_target)
+            spec['artifact_paths'] = [export_target]
+            return toolchain, spec
+
         tester_mod = ModuleType('calmjs_dev_tester')
         tester_mod.generic = generic_tester
+        tester_mod.export = export_target_only
 
         self.addCleanup(sys.modules.pop, 'calmjs_dev_tester')
         self.addCleanup(
@@ -969,6 +973,7 @@ class CliRuntimeTestCase(unittest.TestCase):
             ('entry_points.txt', '\n'.join([
                 '[calmjs.artifacts.tests]',
                 'artifact.js = calmjs_dev_tester:generic',
+                'export_target.js = calmjs_dev_tester:export',
             ])),
         ), 'calmjs.dev', '1.0', working_dir=working_dir)
 
@@ -989,9 +994,14 @@ class CliRuntimeTestCase(unittest.TestCase):
         main_js = resource_filename('calmjs.dev', 'main.js')
         artifact_target = registry.get_artifact_filename(
             'calmjs.dev', 'artifact.js')
+        export_target = registry.get_artifact_filename(
+            'calmjs.dev', 'export_target.js')
         os.mkdir(dirname(artifact_target))
         with open(main_js) as reader:
             with open(artifact_target, 'w') as writer:
+                writer.write(reader.read())
+            reader.seek(0)
+            with open(export_target, 'w') as writer:
                 writer.write(reader.read())
 
         # assign this dummy registry to the root records with cleanup

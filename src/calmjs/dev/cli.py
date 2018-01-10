@@ -23,6 +23,7 @@ from calmjs.toolchain import BUILD_DIR
 from calmjs.toolchain import ARTIFACT_PATHS
 from calmjs.toolchain import CALMJS_MODULE_REGISTRY_NAMES
 from calmjs.toolchain import CALMJS_TEST_REGISTRY_NAMES
+from calmjs.toolchain import EXPORT_TARGET
 from calmjs.toolchain import GENERATE_SOURCE_MAP
 from calmjs.toolchain import SOURCE_PACKAGE_NAMES
 from calmjs.toolchain import TEST_PACKAGE_NAMES
@@ -353,39 +354,49 @@ class KarmaDriver(NodeDriver):
         toolchain(spec)
 
 
-def karma_verify_package_artifacts(package_names=[], **kwargs):
-    extra_arguments = {}
+def _execute_builder(registry, builder, kwargs):
+    entry_point, toolchain, spec = builder
     # process the extra arguments such that the "default" values are
     # stripped from the extra arguments to prevent them from being
     # needlessly applied later.
+    extra_arguments = {}
     update_spec_for_karma(extra_arguments, **kwargs)
+
+    # ensure that this is available in the spec.
+    artifacts = spec[ARTIFACT_PATHS] = spec.get(ARTIFACT_PATHS, [])
+    # manually merge any extra arguments that should be merged
+    artifacts[0:0] = extra_arguments.pop(ARTIFACT_PATHS, [])
+
+    if spec[EXPORT_TARGET] not in artifacts:
+        artifacts.append(spec[EXPORT_TARGET])
+
+    # ensure remaining extra arguments are applied, but note
+    # down values that have been overwritten.
+    overwritten = dict_update_overwrite_check(spec, extra_arguments)
+    for key, old, new in overwritten:
+        logger.debug(
+            "spec['%s'] was %s replaced with %s", key, old, new)
+
+    prepare_spec_artifacts(spec)
+    artifact_exists = exists(spec[EXPORT_TARGET])
+    if not artifact_exists:
+        logger.warning("artifact not found: %s", spec[EXPORT_TARGET])
+        return False
+
+    registry.execute_builder(entry_point, toolchain, spec)
+    return spec.get(karma.KARMA_RETURN_CODE) == 0
+
+
+def karma_verify_package_artifacts(package_names=[], **kwargs):
+    result = True
     # TODO make this registry a specified value?
     registry = get('calmjs.artifacts.tests')
-    result = True
     for package in package_names:
-        # using the registry API to further inject additional
-        # parameters to the spec
-        for entry_point, toolchain, spec in registry.iter_builders_for(
-                package):
-            # manually merge any extra arguments that should be merged
-            spec[ARTIFACT_PATHS][0:0] = extra_arguments.pop(ARTIFACT_PATHS, [])
+        # rather than calling registry.process_package directly,
+        # manually use its other API calls to iterate through the
+        # builders and inject the additional keyword arguments.  This is
+        # done in the private execute builder function above.
+        for builder in registry.iter_builders_for(package):
+            result = result and _execute_builder(registry, builder, kwargs)
 
-            # ensure remaining extra arguments are applied, but note
-            # down values that have been overwritten.
-            overwritten = dict_update_overwrite_check(spec, extra_arguments)
-            for key, old, new in overwritten:
-                logger.debug(
-                    "spec['%s'] was %s replaced with %s", key, old, new)
-
-            prepare_spec_artifacts(spec)
-            artifact_exists = exists(spec['export_target'])
-            if not artifact_exists:
-                logger.warning(
-                    "artifact not found: %s", spec['export_target'])
-            else:
-                registry.execute_builder(entry_point, toolchain, spec)
-            result = (
-                result and artifact_exists and
-                spec.get(karma.KARMA_RETURN_CODE) == 0
-            )
     return result

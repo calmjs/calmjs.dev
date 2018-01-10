@@ -12,17 +12,31 @@ long_description = (
 classifiers = """
 Development Status :: 5 - Production/Stable
 Environment :: Console
+Environment :: Plugins
 Framework :: Setuptools Plugin
 Intended Audience :: Developers
 License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)
+Operating System :: MacOS :: MacOS X
+Operating System :: Microsoft :: Windows
+Operating System :: POSIX
+Operating System :: POSIX :: BSD
+Operating System :: POSIX :: Linux
 Operating System :: OS Independent
 Programming Language :: JavaScript
+Programming Language :: Python
+Programming Language :: Python :: 2
 Programming Language :: Python :: 2.7
+Programming Language :: Python :: 3
 Programming Language :: Python :: 3.3
 Programming Language :: Python :: 3.4
 Programming Language :: Python :: 3.5
 Programming Language :: Python :: 3.6
+Programming Language :: Python :: Implementation :: CPython
+Programming Language :: Python :: Implementation :: PyPy
 Topic :: Software Development :: Testing
+Topic :: Software Development :: Build Tools
+Topic :: System :: Software Distribution
+Topic :: Utilities
 """.strip().splitlines()
 
 package_json = {
@@ -69,7 +83,8 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'calmjs>=3.0.0dev,<4',
+        'calmjs>=3.0.0,<4',
+        'calmjs.parse>=1.0.0',
     ],
     package_json=package_json,
     entry_points={

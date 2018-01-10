@@ -47,19 +47,25 @@ framework.  The tests can then run either against the JavaScript sources
 provided by the Python package through the artifact generation
 framework, or against prebuilt artifacts that contain those
 functionalities.  Naturally, the support for the artifact generation
-framework requires integration with the Calmjs framework; currently, the
-support of AMD is implemented through the |calmjs.rjs|_ package.
+framework requires integration with the Calmjs framework.  Currently,
+generation of AMD artifacts is supported using the |calmjs.rjs|_, and
+the generation of |webpack|_ artifacts supported through the
+|calmjs.webpack|_ package.
 
 .. |calmjs| replace:: ``calmjs``
 .. |calmjs.dev| replace:: ``calmjs.dev``
 .. |calmjs.rjs| replace:: ``calmjs.rjs``
+.. |calmjs.webpack| replace:: ``calmjs.webpack``
 .. |npm| replace:: ``npm``
 .. |setuptools| replace:: ``setuptools``
+.. |webpack| replace:: ``webpack``
 .. _Calmjs framework: https://pypi.python.org/pypi/calmjs
 .. _calmjs: https://pypi.python.org/pypi/calmjs
 .. _calmjs.rjs: https://pypi.python.org/pypi/calmjs.rjs
+.. _calmjs.webpack: https://pypi.python.org/pypi/calmjs.webpack
 .. _Node.js: https://nodejs.org
 .. _setuptools: https://pypi.python.org/pypi/setuptools
+.. _webpack: https://webpack.js.org/
 
 
 Features
@@ -195,8 +201,8 @@ The default tool is meant to provide an injectable runtime that sits
 before a |calmjs| toolchain runtime that is responsible for the
 generation of deployable artifacts, such as AMD bundles through
 RequireJS.  Currently, the standard way to use this package is to use it
-in conjunction of the |calmjs.rjs|_ package runtime.  For instance, one
-might execute the ``r.js`` tool through |calmjs.rjs| like:
+in conjunction of the |calmjs.rjs|_ toolchain runtime.  For instance,
+one might execute the ``r.js`` tool through |calmjs.rjs| like:
 
 .. code:: sh
 
@@ -206,23 +212,34 @@ The above command would package all the JavaScript code provided by the
 Python package ``example.package`` into an AMD bundle artifact through
 ``r.js``.  As the ``example.package`` may also provide tests for its
 JavaScript code (naturally written in JavaScript), it may be executed
-through the karma test runner provided by this package.  The command is
-as simple as adding ``karma`` before the toolchain runtime, like:
+through the karma test runner provided by the selected package.  The
+command is as simple as adding ``karma`` before the toolchain runtime,
+like:
 
 .. code:: sh
 
     $ calmjs karma rjs example.package
 
-This would apply a test advice to the ``rjs`` toolchain and invoke it.
-Normally, before the bundling is done, the tests will be executed
-against the transpiled sources in the build directory.
+This would apply a test advice to the ``rjs`` toolchain runtime and
+invoke it.  Normally, before the bundling is done, the tests will be
+executed against the transpiled sources in the build directory.  Note
+that the test advice is also implemented by |calmjs.rjs| to ensure that
+this testing workflow is properly integrated.  Likewise for
+|calmjs.webpack|, where its support for |webpack| is also provided
+through a similar mechanism such that the following command will execute
+the tests for the package through the typical |webpack| method of
+|karma| invocation:
+
+.. code:: sh
+
+    $ calmjs karma webpack example.package
 
 To run tests against pre-generated artifact files, |calmjs.dev| provides
 a surrogate toolchain runtime specific for the ``karma`` command that
-may be used to achieve this purpose.  For example, if one wishes to run
-tests a bundle file ``bundle.js`` which they assumed to contain code
-from ``example.package``, they may wish to run tests defined for that
-package by invoking:
+may be used to achieve this purpose.  For example, given an artifact
+file (e.g. ``bundle.js``), it is possible to test whether it correctly
+included JavaScript code generated/provided by ``example.package`` using
+tests provided by the same package with the following command:
 
 .. code:: sh
 
@@ -243,6 +260,16 @@ this is necessary.  The full command may be like so:
         --artifact=bundle.js \
         --test-with-package=example.package \
         --toolchain-package=calmjs.rjs
+
+Likewise for |webpack|; if the selected artifact file is generated
+through ``calmjs webpack``, it may be tested using the following:
+
+.. code:: sh
+
+    $ calmjs karma run \
+        --artifact=bundle.js \
+        --test-with-package=example.package \
+        --toolchain-package=calmjs.webpack
 
 As with all |calmjs| tools, more help can be acquired by appending
 ``-h`` or ``--help`` to each of the runtime commands, i.e. ``calmjs
@@ -299,25 +326,33 @@ executed to test the defined and generated artifacts:
     $ calmjs artifact karma example.package
 
 There are cases where the test execution may require sourcing tests from
-dependencies; this use-case is especially true for dependents that want
-to ensure that their potential changes to their upstream implementation
-do not impact existing functionality negatively.  The
-``--test-with-package`` flag may be specified for this:
+other packages; this use case is especially valid for dependent packages
+where their developer want to ensure that the changes they may have made
+to their dependencies through the extensions they developed and provided
+by their packages have no negative impact to existing functionality.
+This functionality is implemented by the ``--test-with-package`` flag,
+which may be used to specify which package the artifact should source
+the tests from.
 
 .. code:: sh
 
     $ calmjs artifact karma example.package \
         --test-with-package example.dependent
 
-The above command basically use karma to test the artifacts defined in
-``example.package`` with the tests provided by the package
-``example.dependent``.
+The above command will use karma to execute tests provided by the
+``example.dependent`` package against the artifacts defined for
+``example.package``.  If the artifacts were correctly built, with no
+new code breaking existing functionality that was provided by the
+``example.dependent`` package, all tests should pass.
 
-Note that ``--test-with-package`` flag typically overrides the list of
-source packages that will provide the tests to be tested against the
-artifact.  Extra artifacts may be also specified with the ``--artifact``
-flag; specified artifacts will be prepended to the list of included
-artifacts for the test execution.
+Note that ``--test-with-package`` flag overrides the list of source
+packages that will provide the tests to be tested against the artifact.
+
+If additional artifacts are required before the inclusion of the package
+artifact into the test runner (e.g. testing for possible conflicts that
+artifacts may introduce to the package artifact), they may be specified
+using the ``--artifact`` flag; specified artifacts will be prepended to
+the list of artifacts provided by the builder for the test execution.
 
 
 Troubleshooting

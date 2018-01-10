@@ -5,15 +5,23 @@ Changelog
 ------------------
 
 - Migration to the calmjs-3.0.0 API.
+- Bumped a number of dependencies on Node.js packages.
 - The paths that are covered by the test coverage report are now
   recorded in the Spec as part of the test execution workflow through
   the KarmaDriver.
 - Provide framework and command for testing of predefined artifacts
-  generated for packages defined for the ``calmjs.artifacts`` registry.
+  generated for packages defined through the ``calmjs.artifacts``
+  registry; ``calmjs.artifacts.tests`` registry was created such that
+  toolchain packages may declare the test compliment builder functions
+  to facilitate testing for their dependent packages.
 - Implemented ``--cover-report-type`` flag to support the specification
-  of multiple coverage report types to be generated.
-- Deprecated ``--coverage-type`` flag, as it is incosistently named and
-  that ``--cover-report-type`` is implemented to supercede this.
+  of multiple coverage report types to be generated, and ensured that
+  the defined report types actually work (a karma/istanbul bug was
+  found and a workaround was implemented).
+- A number of internal code refactor, i.e. a number of internal API
+  changes have happened.
+- Deprecated ``--coverage-type`` flag, as it is inconsistently named and
+  that features provided by ``--cover-report-type`` superseded this.
 - Deprecated ``--test-package`` flag in favor of ``--test-with-package``
   for more clarity about the intention of that flag.
 

@@ -10,6 +10,7 @@ from os.path import exists
 from os.path import join
 from os.path import normpath
 from os.path import pathsep
+from os.path import realpath
 from textwrap import dedent
 from types import ModuleType
 
@@ -78,16 +79,59 @@ class TestCommonArgparser(unittest.TestCase):
         )
         # default always show this
         self.assertIn('text', self.parse([]).cover_report_types)
+        # check for deprecated option
+        self.assertIsNone(self.parse([]).coverage_type)
 
     def test_parse_default_cover_report_type_legacy(self):
         import warnings
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter('always')
             self.assertEqual(
-                ['html'],
-                self.parse(['--coverage-type=html']).cover_report_types)
+                'html',
+                self.parse(['--coverage-type=html']).coverage_type)
 
-        self.assertIn("will be removed by", str(w[0].message))
+            self.assertIn("will be removed by", str(w[0].message))
+            # a somewhat more complete test
+            config = {}
+            driver = cli.KarmaDriver()
+            with pretty_logging(
+                    logger='calmjs.dev', stream=mocks.StringIO()) as log:
+                # emulate the parsing into a spec
+                spec = Spec(**vars(self.parse(['--coverage-type=html'])))
+                driver._apply_coverage_reporters(spec, config)
+
+        self.assertIn("WARNING", log.getvalue())
+        self.assertIn("'coverage_type' is deprecated", log.getvalue())
+        self.assertEqual({
+            'type': 'html',
+            'dir': realpath('coverage'),
+        }, config['coverageReporter'])
+
+    def test_parse_default_cover_report_type_legacy_default(self):
+        import warnings
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter('always')
+            self.assertEqual(
+                'default',
+                self.parse(['--coverage-type=default']).coverage_type)
+
+            # a somewhat more complete test
+            config = {}
+            driver = cli.KarmaDriver()
+            with pretty_logging(
+                    logger='calmjs.dev', stream=mocks.StringIO()) as log:
+                # emulate the parsing into a spec
+                spec = Spec(**vars(self.parse(['--coverage-type=default'])))
+                driver._apply_coverage_reporters(spec, config)
+
+        self.assertNotIn("WARNING", log.getvalue())
+        self.assertNotIn("'coverage_type' is deprecated", log.getvalue())
+        # the default value actually is supported
+        self.assertEqual(
+            sorted(DEFAULT_COVER_REPORT_TYPE_OPTIONS),
+            sorted([
+                r['type'] for r in config['coverageReporter']['reporters']]),
+        )
 
     def test_parse_default_cover_report_type_specified(self):
         self.assertEqual(

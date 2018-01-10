@@ -35,6 +35,7 @@ from calmjs.dev.toolchain import COVER_BUNDLE
 from calmjs.dev.toolchain import COVER_REPORT_DIR
 from calmjs.dev.toolchain import COVER_REPORT_FILE
 from calmjs.dev.toolchain import COVER_TEST
+from calmjs.dev.toolchain import COVERAGE_TYPE
 from calmjs.dev.toolchain import NO_WRAP_TESTS
 from calmjs.dev.karma import COVER_REPORT_TYPE_OPTIONS
 from calmjs.dev.karma import DEFAULT_COVER_REPORT_TYPE_OPTIONS
@@ -168,10 +169,10 @@ def init_argparser_common(argparser):
 
     argparser.add_argument(
         '--coverage-type',
-        dest=COVER_REPORT_TYPES,
-        default=DEFAULT_COVER_REPORT_TYPE_OPTIONS,
-        choices=sorted(COVER_REPORT_TYPE_OPTIONS.keys()),
-        action=StoreDelimitedList,
+        dest=COVERAGE_TYPE,
+        default=None,
+        choices=sorted(list(COVER_REPORT_TYPE_OPTIONS.keys()) + ['default']),
+        action='store',
         deprecation="will be removed by calmjs.dev-3.0.0; please use "
                     "'--cover-report-type' instead",
     )

@@ -90,6 +90,8 @@ def update_spec_for_karma(spec, **kwargs):
             COVER_TEST,
             NO_WRAP_TESTS,
             BUILD_DIR,
+            # deprecated flag
+            COVERAGE_TYPE,
         ]),
         # For all list types.
         ([], [

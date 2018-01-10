@@ -984,6 +984,11 @@ class CliRuntimeTestCase(unittest.TestCase):
             ])),
         ), 'missing', '1.0', working_dir=working_dir)
 
+        make_dummy_dist(self, (
+            ('entry_points.txt', '\n'.join([
+            ])),
+        ), 'nothing', '1.0', working_dir=working_dir)
+
         # simply inject the "artifact" for this package into the
         # registry
         mock_ws = WorkingSet([working_dir])
@@ -1017,6 +1022,10 @@ class CliRuntimeTestCase(unittest.TestCase):
         rt = self.setup_karma_artifact_runtime()
         self.assertFalse(rt(['calmjs.dev']))
         self.assertIn('continuing as specified', sys.stderr.getvalue())
+        self.assertNotIn(
+            "package 'calmjs.dev' declared no tests for its artifacts",
+            sys.stderr.getvalue(),
+        )
 
     def test_artifact_verify_fail_exit_first(self):
         # should not explode if the abort is triggered
@@ -1072,6 +1081,22 @@ class CliRuntimeTestCase(unittest.TestCase):
         self.assertFalse(rt(['missing']))
         self.assertIn('artifact not found:', sys.stderr.getvalue())
         self.assertIn('missing.js', sys.stderr.getvalue())
+
+    def test_artifact_verify_fail_at_no_declaration(self):
+        # missing packages should also fail by default
+        stub_stdouts(self)
+        rt = self.setup_karma_artifact_runtime()
+        reg = root_registry.get('calmjs.dev.module.tests')
+        reg.records['calmjs.dev.tests'].pop('calmjs/dev/tests/test_fail', '')
+        self.assertFalse(rt(['calmjs.dev', 'nothing']))
+        self.assertNotIn(
+            "package 'calmjs.dev' declared no tests for its artifacts",
+            sys.stderr.getvalue(),
+        )
+        self.assertIn(
+            "package 'nothing' declared no tests for its artifacts",
+            sys.stderr.getvalue(),
+        )
 
     def test_artifact_verify_fail_at_replacement(self):
         # missing packages should also fail by default

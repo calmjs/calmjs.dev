@@ -395,8 +395,16 @@ def karma_verify_package_artifacts(package_names=[], **kwargs):
         # rather than calling registry.process_package directly,
         # manually use its other API calls to iterate through the
         # builders and inject the additional keyword arguments.  This is
-        # done in the private execute builder function above.
-        for builder in registry.iter_builders_for(package):
-            result = result and _execute_builder(registry, builder, kwargs)
+        # done in the private execute builder function above, but with
+        # each thing stored.
+        results = [
+            _execute_builder(registry, builder, kwargs)
+            for builder in registry.iter_builders_for(package)
+        ]
+
+        if not len(results):
+            logger.warning(
+                "package '%s' declared no tests for its artifacts", package)
+        result = result and any(results) and all(results)
 
     return result

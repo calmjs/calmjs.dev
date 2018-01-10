@@ -76,7 +76,8 @@ def prepare_spec_artifacts(spec):
 
 def update_spec_for_karma(spec, **kwargs):
     # This method assigns default values of the specific type to
-    # the spec.  Ensure they are added correctly.
+    # the spec, complimenting a toolchain runtime's kwargs_to_spec
+    # method, to ensure that they are added correctly.
     post_process_group = (
         # default value, and keys to be assigned that
         (None, [
@@ -103,7 +104,11 @@ def update_spec_for_karma(spec, **kwargs):
     for defaultvalue, post_process in post_process_group:
         for key in post_process:
             if kwargs.get(key, defaultvalue) != defaultvalue:
-                spec[key] = kwargs[key]
+                if defaultvalue is None:
+                    spec[key] = kwargs[key]
+                else:
+                    # shallow copy.
+                    spec[key] = type(defaultvalue)(kwargs[key])
             else:
                 # pop them out from spec
                 spec.pop(key, None)

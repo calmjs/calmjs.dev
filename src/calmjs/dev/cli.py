@@ -363,8 +363,7 @@ def karma_verify_package_artifacts(package_names=[], **kwargs):
         for entry_point, toolchain, spec in registry.iter_builders_for(
                 package):
             # manually merge any extra arguments that should be merged
-            spec[ARTIFACT_PATHS].extend(
-                extra_arguments.pop(ARTIFACT_PATHS, []))
+            spec[ARTIFACT_PATHS][0:0] = extra_arguments.pop(ARTIFACT_PATHS, [])
 
             # ensure remaining extra arguments are applied, but note
             # down values that have been overwritten.

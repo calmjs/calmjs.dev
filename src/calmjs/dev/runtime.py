@@ -16,6 +16,7 @@ from calmjs.argparse import StoreRequirementList
 from calmjs.argparse import metavar
 from calmjs.toolchain import ADVICE_PACKAGES
 from calmjs.toolchain import ARTIFACT_PATHS
+from calmjs.toolchain import BUILD_DIR
 from calmjs.toolchain import CALMJS_TEST_REGISTRY_NAMES
 from calmjs.toolchain import TEST_PACKAGE_NAMES
 from calmjs.runtime import BaseArtifactRegistryRuntime
@@ -69,7 +70,7 @@ def init_argparser_common(argparser):
     )
 
     argparser.add_argument(
-        '--test-with-package', default=[],
+        '-u', '--test-with-package', default=[],
         metavar='<package>[,<package>...]',
         dest=TEST_PACKAGE_NAMES, action=StoreDelimitedList,
         help='explicitly specify Python package(s) to gather JavaScript tests '
@@ -306,6 +307,15 @@ class KarmaArtifactRuntime(BaseArtifactRegistryRuntime):
             '-x', '--exit-first',
             dest=KARMA_ABORT_ON_TEST_FAILURE, action='store_true',
             help='abort on the first failed artifact',
+        )
+
+        # since the default doesn't provide this as a toolchain runtime,
+        # but the underlying execution model supports this (as it makes
+        # use of toolchain and its execution model), provide this as a
+        # hidden option for the use case that require this.
+        argparser.add_argument(
+            '--build-dir', default=None, dest=BUILD_DIR,
+            metavar=metavar(BUILD_DIR), help=SUPPRESS,
         )
 
         self.init_argparser_package_names(

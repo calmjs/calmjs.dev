@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import unittest
+import codecs
 import os
 import sys
 import json
@@ -15,6 +16,7 @@ from types import ModuleType
 from pkg_resources import resource_filename
 from pkg_resources import WorkingSet
 
+from calmjs.parse import es5
 from calmjs.argparse import ArgumentParser
 from calmjs.exc import ToolchainAbort
 from calmjs.npm import get_npm_version
@@ -1072,7 +1074,7 @@ class CliRuntimeTestCase(unittest.TestCase):
         self.assertIn("calmjs.dev'] replaced with", sys.stderr.getvalue())
         self.assertIn("missing']", sys.stderr.getvalue())
 
-    def test_artifact_verify_extra_artifacts(self):
+    def test_artifact_verify_extra_artifacts_with_build_dir(self):
         # this one is provided only as convenience; this may be useful
         # for builders that construct a partial artifacts but using a
         # test rule that doesn't provide some requirements, or for
@@ -1097,6 +1099,7 @@ class CliRuntimeTestCase(unittest.TestCase):
             });
             """.strip()))
 
+        build_dir = mkdtemp(self)
         stub_stdouts(self)
         rt = self.setup_karma_artifact_runtime()
         # remove the fail test.
@@ -1106,7 +1109,23 @@ class CliRuntimeTestCase(unittest.TestCase):
         # still gets tested.
         reg.records['calmjs.dev.tests'][
             'calmjs/dev/tests/test_extra'] = extra_test
-        self.assertTrue(rt(['-vv', '--artifact', extra_js, 'calmjs.dev']))
+        self.assertTrue(rt([
+            '-vv',
+            '--artifact', extra_js,
+            '--build-dir', build_dir,
+            '-u', 'calmjs.dev',
+            'calmjs.dev',
+        ]))
         stderr = sys.stderr.getvalue()
         self.assertIn("specified artifact '%s' found" % extra_js, stderr)
         self.assertIn("artifact.js' found", stderr)
+
+        with codecs.open(
+                join(build_dir, 'karma.conf.js'), encoding='utf8') as fd:
+            rawconf = es5(fd.read())
+
+        # manually and lazily extract the configuration portion
+        config = json.loads(str(
+            rawconf.children()[0].expr.right.elements[0].expr.args.items[0]))
+        # the extra specified artifact must be before the rest.
+        self.assertEqual(config['files'][0], extra_js)

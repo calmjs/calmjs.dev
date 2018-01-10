@@ -8,6 +8,7 @@ from calmjs.toolchain import ARTIFACT_PATHS
 from calmjs.toolchain import CALMJS_MODULE_REGISTRY_NAMES
 from calmjs.toolchain import CALMJS_TEST_REGISTRY_NAMES
 from calmjs.toolchain import TEST_PACKAGE_NAMES
+from calmjs.toolchain import BUILD_DIR
 from calmjs.dist import flatten_module_registry_names
 
 from calmjs.dev.karma import KARMA_BROWSERS
@@ -85,6 +86,7 @@ def update_spec_for_karma(spec, **kwargs):
             COVER_BUNDLE,
             COVER_TEST,
             NO_WRAP_TESTS,
+            BUILD_DIR,
         ]),
         # For all list types.
         ([], [

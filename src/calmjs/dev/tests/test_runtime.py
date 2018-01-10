@@ -17,6 +17,7 @@ from pkg_resources import resource_filename
 from pkg_resources import WorkingSet
 
 from calmjs.parse import es5
+from calmjs.artifact import ArtifactRegistry
 from calmjs.argparse import ArgumentParser
 from calmjs.exc import ToolchainAbort
 from calmjs.npm import get_npm_version
@@ -986,6 +987,15 @@ class CliRuntimeTestCase(unittest.TestCase):
 
         make_dummy_dist(self, (
             ('entry_points.txt', '\n'.join([
+                # this won't actually generate an artifact, but that is
+                # not what is being tested.
+                '[calmjs.artifacts]',
+                'testless.js = calmjs_dev_tester:generic',
+            ])),
+        ), 'testless', '1.0', working_dir=working_dir)
+
+        make_dummy_dist(self, (
+            ('entry_points.txt', '\n'.join([
             ])),
         ), 'nothing', '1.0', working_dir=working_dir)
 
@@ -1013,6 +1023,12 @@ class CliRuntimeTestCase(unittest.TestCase):
         self.addCleanup(root_registry.records.pop, 'calmjs.artifacts.tests')
         root_registry.records['calmjs.artifacts.tests'] = registry
 
+        # include the artifact registry, too.
+        self.addCleanup(root_registry.records.pop, 'calmjs.artifacts')
+        artifact_registry = ArtifactRegistry(
+            'calmjs.artifacts', _working_set=mock_ws)
+        root_registry.records['calmjs.artifacts'] = artifact_registry
+
         # use the verify artifact runtime directly
         return KarmaArtifactRuntime()
 
@@ -1023,7 +1039,7 @@ class CliRuntimeTestCase(unittest.TestCase):
         self.assertFalse(rt(['calmjs.dev']))
         self.assertIn('continuing as specified', sys.stderr.getvalue())
         self.assertNotIn(
-            "package 'calmjs.dev' declared no tests for its artifacts",
+            "no artifacts or tests defined for package 'calmjs.dev'",
             sys.stderr.getvalue(),
         )
 
@@ -1082,29 +1098,47 @@ class CliRuntimeTestCase(unittest.TestCase):
         self.assertIn('artifact not found:', sys.stderr.getvalue())
         self.assertIn('missing.js', sys.stderr.getvalue())
 
-    def test_artifact_verify_fail_at_no_declaration(self):
-        # missing packages should also fail by default
+    def test_artifact_verify_success_at_no_declaration_or_artifact(self):
+        # missing tests for packages without artifacts can't fail.
         stub_stdouts(self)
         rt = self.setup_karma_artifact_runtime()
         reg = root_registry.get('calmjs.dev.module.tests')
         reg.records['calmjs.dev.tests'].pop('calmjs/dev/tests/test_fail', '')
-        self.assertFalse(rt(['calmjs.dev', 'nothing']))
+        self.assertTrue(rt(['-v', 'calmjs.dev', 'nothing']))
         self.assertNotIn(
-            "package 'calmjs.dev' declared no tests for its artifacts",
+            "no artifacts or tests defined for package 'calmjs.dev'",
             sys.stderr.getvalue(),
         )
         self.assertIn(
-            "package 'nothing' declared no tests for its artifacts",
+            "no artifacts or tests defined for package 'nothing'",
+            sys.stderr.getvalue(),
+        )
+
+    def test_artifact_verify_fail_at_missing_test_for_artifact(self):
+        # missing tests for packages with artifacts must fail
+        stub_stdouts(self)
+        rt = self.setup_karma_artifact_runtime()
+        reg = root_registry.get('calmjs.dev.module.tests')
+        reg.records['calmjs.dev.tests'].pop('calmjs/dev/tests/test_fail', '')
+        self.assertFalse(rt(['calmjs.dev', 'testless']))
+        self.assertNotIn(
+            "no artifacts or tests defined for package 'calmjs.dev'",
+            sys.stderr.getvalue(),
+        )
+        self.assertIn(
+            "no test found for artifacts declared for package 'testless'",
             sys.stderr.getvalue(),
         )
 
     def test_artifact_verify_fail_at_replacement(self):
-        # missing packages should also fail by default
+        # failure happening because there are no tests found when
+        # execution for them are set up.
         stub_stdouts(self)
         rt = self.setup_karma_artifact_runtime()
         self.assertFalse(rt([
             '-vv', 'calmjs.dev', '--test-with-package', 'missing'
         ]))
+        # though mostly the tests is for the capturing of these messages
         self.assertIn("spec['test_package_names'] was", sys.stderr.getvalue())
         self.assertIn("calmjs.dev'] replaced with", sys.stderr.getvalue())
         self.assertIn("missing']", sys.stderr.getvalue())

@@ -375,7 +375,7 @@ def _execute_builder(registry, builder, kwargs):
     overwritten = dict_update_overwrite_check(spec, extra_arguments)
     for key, old, new in overwritten:
         logger.debug(
-            "spec['%s'] was %s replaced with %s", key, old, new)
+            "spec['%s'] was %r replaced with %r", key, old, new)
 
     prepare_spec_artifacts(spec)
     artifact_exists = exists(spec[EXPORT_TARGET])
@@ -389,8 +389,10 @@ def _execute_builder(registry, builder, kwargs):
 
 def karma_verify_package_artifacts(package_names=[], **kwargs):
     result = True
-    # TODO make this registry a specified value?
-    registry = get('calmjs.artifacts.tests')
+    # Should the value of the registry be arguments?  Not doing that for
+    # now to limit the scope of the implementation.
+    main_registry = get('calmjs.artifacts')
+    test_registry = get('calmjs.artifacts.tests')
     for package in package_names:
         # rather than calling registry.process_package directly,
         # manually use its other API calls to iterate through the
@@ -398,13 +400,22 @@ def karma_verify_package_artifacts(package_names=[], **kwargs):
         # done in the private execute builder function above, but with
         # each thing stored.
         results = [
-            _execute_builder(registry, builder, kwargs)
-            for builder in registry.iter_builders_for(package)
+            _execute_builder(test_registry, builder, kwargs)
+            for builder in test_registry.iter_builders_for(package)
         ]
 
+        tests_missing = False
         if not len(results):
-            logger.warning(
-                "package '%s' declared no tests for its artifacts", package)
-        result = result and any(results) and all(results)
+            if not any(main_registry.iter_builders_for(package)):
+                logger.info(
+                    "no artifacts or tests defined for package '%s'", package)
+            else:
+                tests_missing = True
+                logger.error(
+                    "no test found for artifacts declared for package '%s'",
+                    package
+                )
+
+        result = result and all(results) and not tests_missing
 
     return result

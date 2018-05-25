@@ -63,22 +63,29 @@ class ArtifactTestRegistryTestCase(unittest.TestCase):
             'calmjs.artifacts.tests', _working_set=mock_ws)
 
         artifact_name = registry.get_artifact_filename('app', 'artifact.js')
-        # it's an advice
-        verifier = registry.verify_export_target(artifact_name)
-        self.assertTrue(callable(verifier))
 
-        with self.assertRaises(ToolchainCancel):
+        with self.assertRaises(ToolchainCancel) as e:
             # file not exist yet will cancel the execution
-            verifier(artifact_name)
+            registry.prepare_export_location(artifact_name)
+
+        self.assertIn("missing export_target '", str(e.exception))
+        self.assertIn("artifact.js'", str(e.exception))
 
         mkdir(dirname(artifact_name))
         with open(artifact_name, 'w') as fd:
             fd.write('console.log("test artifact");\n')
 
-        self.assertTrue(verifier(artifact_name))
+        # no longer raise an exception
+        registry.prepare_export_location(artifact_name)
 
+        self.assertNotIn('before_prepare', spec._advices)
         registry.process_package('app')
-
         # cheat a bit by probing some private bits to see that the
         # relevant advice is planted but not executed
-        self.assertTrue(1, len(spec._advices['before_test']))
+        self.assertEqual(1, len(spec._advices['before_prepare']))
+        # for whatever reason, instance methods are not identities of
+        # itself thus `is` cannot be used as the validation operator.
+        self.assertEqual(
+            spec._advices['before_prepare'][0][0],
+            registry.prepare_export_location,
+        )

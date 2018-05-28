@@ -1,6 +1,15 @@
 Changelog
 =========
 
+2.1.0 (Unreleased)
+------------------
+
+- Ensure the exit code indicates failure if the artifact test entry
+  point references an import that cannot be resolved (failure to set up
+  the test must result in a failure). [
+  `#3 <https://github.com/calmjs/calmjs.dev/issues/3>`_
+  ]
+
 2.0.0 (2018-01-10)
 ------------------
 

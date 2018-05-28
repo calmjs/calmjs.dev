@@ -83,7 +83,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'calmjs>=3.0.0,<4',
+        'calmjs>=3.1.0,<4',
         'calmjs.parse>=1.0.0',
     ],
     package_json=package_json,

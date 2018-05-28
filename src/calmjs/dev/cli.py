@@ -388,24 +388,38 @@ def _execute_builder(registry, builder, kwargs):
 
 
 def karma_verify_package_artifacts(package_names=[], **kwargs):
+    """
+    The kwargs are there so that runtime (or other external users) can
+    pass in arguments to control certain execution aspects of the tests.
+    """
+
     result = True
     # Should the value of the registry be arguments?  Not doing that for
     # now to limit the scope of the implementation.
     main_registry = get('calmjs.artifacts')
     test_registry = get('calmjs.artifacts.tests')
-    for package in package_names:
-        # rather than calling registry.process_package directly,
-        # manually use its other API calls to iterate through the
-        # builders and inject the additional keyword arguments.  This is
-        # done in the private execute builder function above, but with
-        # each thing stored.
-        results = [
-            _execute_builder(test_registry, builder, kwargs)
-            for builder in test_registry.iter_builders_for(package)
-        ]
 
+    # Note that this set of loops more or less duplicates the helper
+    # calmjs.artifact.ArtifactBuilder, but there are differences given
+    # that it also assume the production of metadata, while this simply
+    # does not do anything of that sort.
+
+    for package in package_names:
+        for entry_point, export_target in \
+                test_registry.iter_export_targets_for(package):
+            builder = next(test_registry.generate_builder(
+                entry_point, export_target), None)
+            if not builder:
+                # immediate failure if builder does not exist.
+                result = False
+                continue
+            result = result and _execute_builder(
+                test_registry, builder, kwargs)
+
+        # Check also for the artifact registry for any definitions that
+        # do not have a corresponding test defined.
         tests_missing = False
-        if not len(results):
+        if not any(test_registry.iter_export_targets_for(package)):
             if not any(main_registry.iter_builders_for(package)):
                 logger.info(
                     "no artifacts or tests defined for package '%s'", package)
@@ -416,6 +430,6 @@ def karma_verify_package_artifacts(package_names=[], **kwargs):
                     package
                 )
 
-        result = result and all(results) and not tests_missing
+        result = result and not tests_missing
 
     return result

@@ -1040,6 +1040,14 @@ class CliRuntimeTestCase(unittest.TestCase):
 
         make_dummy_dist(self, (
             ('entry_points.txt', '\n'.join([
+                # the tester is missing.
+                '[calmjs.artifacts.tests]',
+                'artifact.js = not_installed:tester',
+            ])),
+        ), 'depsmissing', '1.0', working_dir=working_dir)
+
+        make_dummy_dist(self, (
+            ('entry_points.txt', '\n'.join([
             ])),
         ), 'nothing', '1.0', working_dir=working_dir)
 
@@ -1171,6 +1179,19 @@ class CliRuntimeTestCase(unittest.TestCase):
         )
         self.assertIn(
             "no test found for artifacts declared for package 'testless'",
+            sys.stderr.getvalue(),
+        )
+
+    def test_artifact_verify_fail_at_python_deps_missing(self):
+        # entry_point referenced a package not installed, it should fail
+        # too.
+        stub_stdouts(self)
+        rt = self.setup_karma_artifact_runtime()
+        self.assertFalse(rt(['depsmissing']))
+        self.assertIn(
+            "unable to import the target builder for the "
+            "entry point 'artifact.js = not_installed:tester' from "
+            "package 'depsmissing 1.0'",
             sys.stderr.getvalue(),
         )
 

@@ -1,6 +1,15 @@
 Changelog
 =========
 
+2.1.0 (Unreleased)
+------------------
+
+- Make use of the corrected semantics provided by calmjs-3.1.0 for the
+  deferred export location verification, which also silences the
+  calmjs-4.0.0 deprecation warning. [
+  `#5 <https://github.com/calmjs/calmjs.dev/issues/5>`_
+  ]
+
 2.0.0 (2018-01-10)
 ------------------
 

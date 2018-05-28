@@ -1,7 +1,7 @@
 Changelog
 =========
 
-2.1.0 (Unreleased)
+2.1.0 (2018-05-28)
 ------------------
 
 - Ensure the exit code indicates failure if the artifact test entry

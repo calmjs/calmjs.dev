@@ -9,7 +9,8 @@ from os.path import realpath
 
 from calmjs.cli import node
 from calmjs.cli import get_node_version
-from calmjs.exc import ToolchainAbort
+from calmjs.types.exceptions import ToolchainAbort
+from calmjs.types.exceptions import AdviceAbort
 from calmjs.toolchain import NullToolchain
 from calmjs.toolchain import Spec
 from calmjs.toolchain import BEFORE_TEST
@@ -42,6 +43,24 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
         spec = Spec(build_dir=build_dir)
         driver.setup_toolchain_spec(toolchain, spec)
         driver.test_spec(spec)
+
+        conf = join(build_dir, 'karma.conf.js')
+        self.assertTrue(exists(conf))
+        args = self.call_args[0][0]
+        self.assertIn('karma', args[0])
+        self.assertEqual('start', args[1])
+        self.assertEqual(conf, args[2])
+
+    def test_base_with_toolchain(self):
+        stub_mod_call(self, cli)
+        stub_base_which(self)
+        build_dir = mkdtemp(self)
+        driver = cli.KarmaDriver.create()
+        toolchain = NullToolchain()
+        spec = Spec(build_dir=build_dir)
+        driver.setup_toolchain_spec(toolchain, spec)
+        # run through with toolchain instead.
+        toolchain(spec)
 
         conf = join(build_dir, 'karma.conf.js')
         self.assertTrue(exists(conf))
@@ -162,9 +181,41 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
         driver = cli.KarmaDriver()
         driver.binary = None
         driver.setup_toolchain_spec(toolchain, spec)
-        with self.assertRaises(ToolchainAbort):
+        # the toolchain will not fail
+        with self.assertRaises(AdviceAbort):
             driver.test_spec(spec)
+
+        # retest using just the toolchain and it should only log the
+        # advice abort
+        spec = Spec(build_dir=build_dir)
+        driver.setup_toolchain_spec(toolchain, spec)
+        with pretty_logging(stream=mocks.StringIO()) as log:
+            toolchain(spec)
         self.assertNotIn('karma_return_code', spec)
+        self.assertIn(
+            "group 'before_link' encountered a known error during its "
+            "execution: karma not found; continuing with toolchain execution",
+            log.getvalue()
+        )
+
+    def test_broken_binary_abort_on_test_fail(self):
+        build_dir = mkdtemp(self)
+        toolchain = NullToolchain()
+        spec = Spec(
+            build_dir=build_dir,
+            karma_abort_on_test_failure=True,
+        )
+        driver = cli.KarmaDriver()
+        driver.binary = None
+        driver.setup_toolchain_spec(toolchain, spec)
+        with pretty_logging(stream=mocks.StringIO()) as log:
+            with self.assertRaises(ToolchainAbort):
+                toolchain(spec)
+        self.assertNotIn('karma_return_code', spec)
+        self.assertIn(
+            "an advice in group 'before_link' triggered an abort: "
+            "karma not found", log.getvalue()
+        )
 
     def test_setup_cover(self):
         build_dir = mkdtemp(self)

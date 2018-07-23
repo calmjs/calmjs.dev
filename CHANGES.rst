@@ -1,6 +1,14 @@
 Changelog
 =========
 
+2.2.0 (Unreleased)
+------------------
+
+- Support the correct resolution of test child module registries, which
+  was introduced in ``calmjs-3.3.0``.  [
+  `#6 <https://github.com/calmjs/calmjs.dev/issues/6>`_
+  ]
+
 2.1.0 (2018-05-28)
 ------------------
 

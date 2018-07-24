@@ -1,7 +1,7 @@
 Changelog
 =========
 
-2.2.0 (Unreleased)
+2.2.0 (2018-07-24)
 ------------------
 
 - Support the correct resolution of test child module registries, which

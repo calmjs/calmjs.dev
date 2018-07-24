@@ -1,6 +1,18 @@
 Changelog
 =========
 
+2.2.0 (Unreleased)
+------------------
+
+- Support the correct resolution of test child module registries, which
+  was introduced in ``calmjs-3.3.0``.  [
+  `#6 <https://github.com/calmjs/calmjs.dev/issues/6>`_
+  ]
+- Ensure that a missing karma binary is also correctly dealt with by the
+  same set of exception and flags.  [
+  `#7 <https://github.com/calmjs/calmjs.dev/issues/7>`_
+  ]
+
 2.1.0 (2018-05-28)
 ------------------
 

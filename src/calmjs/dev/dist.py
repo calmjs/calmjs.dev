@@ -5,6 +5,9 @@ Module that provides extra distribution functions
 
 from calmjs.dist import get_module_registry_dependencies
 from calmjs.dist import TEST_REGISTRY_NAME_SUFFIX
+from calmjs.base import BaseModuleRegistry
+from calmjs.module import resolve_child_module_registries_lineage
+from calmjs.registry import get
 
 
 def get_module_registries_dependencies(
@@ -29,6 +32,14 @@ def map_registry_name_to_test(
     """
 
     for registry_name in registry_names:
+        registry = get(registry_name)
+        if isinstance(registry, BaseModuleRegistry):
+            it = resolve_child_module_registries_lineage(registry)
+            prefix = next(it).registry_name
+            suffix = registry.registry_name[len(prefix):]
+            yield prefix + test_registry_name_suffix + suffix
+            continue
+        # no assumptions about whether these registries actually exists
         yield registry_name + test_registry_name_suffix
 
 

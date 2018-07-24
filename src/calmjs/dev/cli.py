@@ -108,7 +108,10 @@ class KarmaDriver(NodeDriver):
         # For now at least log this down like so.
         binary = self.which() or self.which_with_node_modules()
         if binary is None:
-            raise AdviceAbort('karma not found')
+            if spec.get(karma.KARMA_ABORT_ON_TEST_FAILURE):
+                raise ToolchainAbort('karma not found')
+            else:
+                raise AdviceAbort('karma not found')
         # but actually run it with the '--color' flag, because otherwise
         # colors don't work consistently... Node.js tools in a nutshell.
         # ... at least disable colours in the config file will also make

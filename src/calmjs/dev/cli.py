@@ -5,6 +5,7 @@ This module provides interface to the karma cli runtime.
 
 import logging
 import re
+from functools import partial
 from os.path import exists
 from os.path import join
 from os.path import realpath
@@ -309,11 +310,12 @@ class KarmaDriver(NodeDriver):
                 files.extend(f)
         karma_config['files'] = files
 
-        s = self.dumps(karma_config)
         build_dir = spec[BUILD_DIR]
         config_fn = join(build_dir, self.karma_conf_js)
         with open(config_fn, 'w') as fd:
-            fd.write(karma.KARMA_CONF_TEMPLATE % s)
+            writer = spec.get(karma.KARMA_CONFIG_WRITER, partial(
+                karma.config_writer, self))
+            writer(karma_config, fd)
         return config_fn
 
     def write_config(self, spec):

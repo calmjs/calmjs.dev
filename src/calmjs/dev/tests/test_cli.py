@@ -695,11 +695,40 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
             build_dir=build_dir, karma_config={'files': ['test/file']},
             artifact_paths=['test/artifact'],
         )
-        driver.write_config(spec)
-        with open(join(build_dir, 'karma.conf.js')) as fd:
+        with pretty_logging(
+                logger='calmjs.dev', stream=mocks.StringIO()) as log:
+            driver.write_config(spec)
+        karma_conf_js = join(build_dir, 'karma.conf.js')
+        self.assertIn(
+            "' with default karma configuration writer", log.getvalue())
+        self.assertIn(karma_conf_js, log.getvalue())
+        with open(karma_conf_js) as fd:
             conf = fd.read()
         self.assertIn('test/file', conf)
         self.assertIn('test/artifact', conf)
+
+    def test_write_config_override(self):
+        def config_writer(karma_config, fd):
+            karma_config['foo'] = 'bar'
+            fd.write(json.dumps(karma_config))
+
+        build_dir = mkdtemp(self)
+        spec = Spec(
+            build_dir=build_dir, karma_config={},
+            karma_config_writer=config_writer,
+        )
+        driver = cli.KarmaDriver()
+        with pretty_logging(
+                logger='calmjs.dev', stream=mocks.StringIO()) as log:
+            driver.write_config(spec)
+        karma_conf_js = join(build_dir, 'karma.conf.js')
+        self.assertIn("' with writer", log.getvalue())
+        self.assertIn(karma_conf_js, log.getvalue())
+
+        # naturally, this is NOT a valid karma.conf.js since what was
+        # written is just an ordinary JSON file.
+        with open(karma_conf_js) as fd:
+            self.assertEqual({'files': [], 'foo': 'bar'}, json.load(fd))
 
 # rest of cli related tests have been streamlined into runtime for
 # setup and teardown optimisation.

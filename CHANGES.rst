@@ -1,6 +1,14 @@
 Changelog
 =========
 
+2.2.1 (2018-08-01)
+------------------
+
+- Allow the karma configuration writer to be specified in the spec, such
+  that it may be overridden by framework integration packages.  [
+  `#8 <https://github.com/calmjs/calmjs.dev/issues/8>`_
+  ]
+
 2.2.0 (2018-07-24)
 ------------------
 

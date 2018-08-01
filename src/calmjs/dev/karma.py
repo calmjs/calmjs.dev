@@ -19,6 +19,7 @@ KARMA_ADVICE_GROUP = 'karma_advice_group'
 KARMA_BROWSERS = 'karma_browsers'
 KARMA_CONFIG = 'karma_config'
 KARMA_CONFIG_PATH = 'karma_config_path'
+KARMA_CONFIG_WRITER = 'karma_config_writer'
 KARMA_EXTRA_FRAMEWORKS = 'karma_extra_frameworks'
 KARMA_RETURN_CODE = 'karma_return_code'
 KARMA_SPEC_KEYS = 'karma_spec_keys'
@@ -133,3 +134,30 @@ def build_coverage_reporters_config(report_keys, report_dir, report_file):
         'dir': report_dir,
         'reporters': reporters,
     }
+
+
+def config_writer(driver, config, fd):
+    """
+    The default complete karma config writer.  Note that the invocation
+    of the writer by the ``cli.KarmaDriver`` class only applies the
+    latter two arguments, and it would construct a partial using itself
+    to do so.
+
+    The writer itself may be override by providing a function that takes
+    two arguments to spec[KARMA_CONFIG_WRITER], and it may be a partial
+    so that the values of spec and/or the toolchain (plus others) may be
+    referenced from within the scope of the writer, for example:
+
+        from functools import partial
+
+        def some_writer(toolchain, spec, config, fd):
+            fd.write(toolchain.process_test_config(spec, config))
+
+        spec[KARMA_CONFIG_WRITER] = partial(some_writer, toolchain, spec)
+
+    Naturally, the contents written must call config.set with the valid
+    karma configuration settings in order for the execution of the test
+    to occur correctly.
+    """
+
+    fd.write(KARMA_CONF_TEMPLATE % driver.dumps(config))

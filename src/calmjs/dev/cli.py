@@ -313,8 +313,18 @@ class KarmaDriver(NodeDriver):
         build_dir = spec[BUILD_DIR]
         config_fn = join(build_dir, self.karma_conf_js)
         with open(config_fn, 'w') as fd:
-            writer = spec.get(karma.KARMA_CONFIG_WRITER, partial(
-                karma.config_writer, self))
+            if karma.KARMA_CONFIG_WRITER in spec:
+                writer = spec[karma.KARMA_CONFIG_WRITER]
+                logger.debug(
+                    "writing karma configuration file to '%s' with writer "
+                    "that was assigned to spec[KARMA_CONFIG_WRITER]", config_fn
+                )
+            else:
+                writer = partial(karma.config_writer, self)
+                logger.debug(
+                    "writing karma configuration file to '%s' with default "
+                    "karma configuration writer", config_fn
+                )
             writer(karma_config, fd)
         return config_fn
 

@@ -1,7 +1,7 @@
 Changelog
 =========
 
-2.2.1 (Unreleased)
+2.2.1 (2018-08-01)
 ------------------
 
 - Allow the karma configuration writer to be specified in the spec, such

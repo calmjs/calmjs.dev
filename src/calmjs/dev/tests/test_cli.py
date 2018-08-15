@@ -659,7 +659,7 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
                 logger='calmjs.dev', stream=mocks.StringIO()) as log:
             driver.write_config(spec)
         self.assertIn(
-            "no valid 'karma_config' in spec; cannot write 'karma.conf.js'",
+            "'karma_config' not present in spec; cannot write 'karma.conf.js'",
             log.getvalue(),
         )
         self.assertFalse(exists(join(build_dir, 'karma.conf.js')))

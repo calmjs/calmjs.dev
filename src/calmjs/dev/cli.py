@@ -296,9 +296,9 @@ class KarmaDriver(NodeDriver):
     def _write_config(self, spec):
         # grab the config from the spec.
         karma_config = spec.get(karma.KARMA_CONFIG)
-        if not isinstance(karma_config, dict):
+        if karma_config is None:
             logger.error(
-                "no valid '%s' in spec; cannot write '%s'",
+                "'%s' not present in spec; cannot write '%s'",
                 karma.KARMA_CONFIG, self.karma_conf_js,
             )
             return

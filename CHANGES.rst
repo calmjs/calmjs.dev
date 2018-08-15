@@ -1,6 +1,13 @@
 Changelog
 =========
 
+2.2.2 (2018-??-??)
+------------------
+
+- Permit the use of other karma_conf dict/mapping types in the spec.  [
+  `#9 <https://github.com/calmjs/calmjs.dev/issues/9>`_
+  ]
+
 2.2.1 (2018-08-01)
 ------------------
 

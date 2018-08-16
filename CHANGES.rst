@@ -1,6 +1,16 @@
 Changelog
 =========
 
+2.2.2 (2018-??-??)
+------------------
+
+- Configuration writers that write out karma configuration scripts that
+  import other Node.js modules that are present within the environment
+  that the karma binary reside in should no longer encounter a ``Error:
+  Cannot find module`` message.  [
+  `#10 <https://github.com/calmjs/calmjs.dev/issues/10>`_
+  ]
+
 2.2.1 (2018-08-01)
 ------------------
 

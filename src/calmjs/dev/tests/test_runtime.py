@@ -20,6 +20,7 @@ from pkg_resources import WorkingSet
 from calmjs.parse import es5
 from calmjs.artifact import ArtifactRegistry
 from calmjs.argparse import ArgumentParser
+from calmjs.cli import get_node_version
 from calmjs.exc import ToolchainAbort
 from calmjs.npm import get_npm_version
 from calmjs.npm import Driver as NPMDriver
@@ -59,6 +60,7 @@ from calmjs.testing.utils import stub_mod_call
 from calmjs.testing.utils import stub_stdouts
 
 npm_version = get_npm_version()
+node_version = get_node_version()
 
 
 class TestCommonArgparser(unittest.TestCase):
@@ -462,6 +464,9 @@ class CliRuntimeTestCase(unittest.TestCase):
         # as no abort registered.
         self.driver.run(toolchain, spec)
 
+    @unittest.skipIf(
+        node_version is None or node_version < (6,),
+        'feature not supported by environment Node.js version')
     def test_manual_config_writer_with_require(self):
         # ensure that custom writers that writes out a script to include
         # imports of Node.js modules (e.g. assistance with generation of

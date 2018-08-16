@@ -23,6 +23,7 @@ from calmjs.testing import mocks
 from calmjs.testing.utils import mkdtemp
 from calmjs.testing.utils import stub_mod_call
 from calmjs.testing.utils import stub_base_which
+from calmjs.testing.utils import stub_item_attr_value
 
 node_version = get_node_version()
 
@@ -708,9 +709,14 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
         self.assertIn('test/artifact', conf)
 
     def test_write_config_override(self):
+        nodejs_version = (6, 0, 0)
+
         def config_writer(karma_config, fd):
             karma_config['foo'] = 'bar'
             fd.write(json.dumps(karma_config))
+
+        stub_item_attr_value(
+            self, cli, 'get_node_version', lambda: nodejs_version)
 
         build_dir = mkdtemp(self)
         spec = Spec(
@@ -724,11 +730,24 @@ class KarmaDriverTestSpecTestCase(unittest.TestCase):
         karma_conf_js = join(build_dir, 'karma.conf.js')
         self.assertIn("' with writer", log.getvalue())
         self.assertIn(karma_conf_js, log.getvalue())
+        self.assertNotIn('WARNING', log.getvalue())
 
         # naturally, this is NOT a valid karma.conf.js since what was
         # written is just an ordinary JSON file.
         with open(karma_conf_js) as fd:
             self.assertEqual({'files': [], 'foo': 'bar'}, json.load(fd))
+
+        # try writing again using a "lower" less supported nodejs version
+
+        nodejs_version = (4, 9, 1)
+        with pretty_logging(
+                logger='calmjs.dev', stream=mocks.StringIO()) as log:
+            driver.write_config(spec)
+        self.assertIn('WARNING', log.getvalue())
+        self.assertIn(
+            "an 'Invalid config file' or 'Error: cannot find module",
+            log.getvalue()
+        )
 
 # rest of cli related tests have been streamlined into runtime for
 # setup and teardown optimisation.

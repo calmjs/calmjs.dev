@@ -33,6 +33,7 @@ from calmjs.toolchain import dict_update_overwrite_check
 
 from calmjs.cli import NodeDriver
 from calmjs.cli import get_bin_version
+from calmjs.cli import get_node_version
 
 from calmjs.dev import dist
 from calmjs.dev import karma
@@ -60,6 +61,14 @@ from calmjs.dev.toolchain import prepare_spec_artifacts
 from calmjs.dev.toolchain import update_spec_for_karma
 
 logger = logging.getLogger(__name__)
+
+
+def warn_if_nodejs_lt_6(*a, **kw):
+    version = get_node_version()
+    # can't do anything if version is not found
+    if version is None or version >= (6,):
+        return
+    logger.warning(*a, **kw)
 
 
 class KarmaDriver(NodeDriver):
@@ -318,6 +327,12 @@ class KarmaDriver(NodeDriver):
                 logger.debug(
                     "writing karma configuration file to '%s' with writer "
                     "that was assigned to spec[KARMA_CONFIG_WRITER]", config_fn
+                )
+                warn_if_nodejs_lt_6(
+                    "custom karma config writer specified with spec; if "
+                    "an 'Invalid config file' or 'Error: cannot find "
+                    "module' message results, please upgrade Node.js to "
+                    "version 6 or above.",
                 )
             else:
                 writer = partial(karma.config_writer, self)

@@ -100,7 +100,7 @@ class KarmaDriver(NodeDriver):
         spec.handle(karma.BEFORE_KARMA)
 
         config_fn = join(spec[BUILD_DIR], self.karma_conf_js)
-        call_kw = self._gen_call_kws(**utils.extract_gui_environ_keys())
+        call_kw = self._gen_call_kws(**utils.karma_environ(self))
         logger.info('invoking %s start %r', self.binary, config_fn)
         # TODO would be great if there is a way to "tee" the result into
         # both here and stdout.

@@ -41,6 +41,7 @@ from calmjs.dev.toolchain import prepare_spec_artifacts
 from calmjs.dev.toolchain import update_spec_for_karma
 from calmjs.dev.artifact import ArtifactTestRegistry
 from calmjs.dev.karma import DEFAULT_COVER_REPORT_TYPE_OPTIONS
+from calmjs.dev.karma import KARMA_CONF_TEMPLATE
 from calmjs.dev.runtime import init_argparser_common
 from calmjs.dev.runtime import KarmaRuntime
 from calmjs.dev.runtime import TestToolchainRuntime
@@ -460,6 +461,37 @@ class CliRuntimeTestCase(unittest.TestCase):
         toolchain = NullToolchain()
         # as no abort registered.
         self.driver.run(toolchain, spec)
+
+    def test_manual_config_writer_with_require(self):
+        # ensure that custom writers that writes out a script to include
+        # imports of Node.js modules (e.g. assistance with generation of
+        # the final configuration file) will work as expected.
+
+        def config_writer(config, fd):
+            # lodash module is part of the karma dependency
+            fd.write('require("lodash");\n')
+            fd.write(KARMA_CONF_TEMPLATE % json.dumps(config))
+
+        main = resource_filename('calmjs.dev', 'main.js')
+        test_main = resource_filename('calmjs.dev.tests', 'test_main.js')
+        spec = Spec(
+            # null toolchain does not prepare this
+            transpile_sourcepath={
+                'calmjs/dev/main': main,
+            },
+            test_module_paths_map={
+                'calmjs/test_main': test_main,
+            },
+            karma_config_writer=config_writer,
+        )
+        toolchain = NullToolchain()
+        self.driver.run(toolchain, spec)
+        # do note that while this succeeds, the failure condition from
+        # the lack of code in this related changeset is NOT guarantee,
+        # as it is possible for the top level directory or some other
+        # global node modules environment to provide lodash.
+        self.assertEqual(spec['karma_return_code'], 0)
+        self.assertIn('link', spec)
 
     # Now we have the proper runtime tests.
 

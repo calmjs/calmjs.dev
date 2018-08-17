@@ -1,7 +1,7 @@
 Changelog
 =========
 
-2.2.2 (2018-??-??)
+2.2.2 (2018-08-17)
 ------------------
 
 - Configuration writers that write out karma configuration scripts that

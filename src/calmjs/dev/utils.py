@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+from os.path import pathsep
 from itertools import chain
 
 
@@ -21,6 +22,12 @@ _GUI_EXEC_KEYS = [
 
 def extract_gui_environ_keys(keys=_GUI_EXEC_KEYS):
     return {key: os.environ[key] for key in keys if key in os.environ}
+
+
+def karma_environ(driver):
+    base_keys = extract_gui_environ_keys()
+    base_keys['NODE_PATH'] = pathsep.join(driver.find_node_modules_basedir())
+    return base_keys
 
 
 def get_toolchain_targets_keys(

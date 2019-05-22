@@ -261,7 +261,7 @@ class TestToolchainRuntime(ToolchainRuntime):
         )
 
         argparser.add_argument(
-            '-t', '--toolchain-package', default=None,
+            '-t', '--toolchain-package', default=[],
             required=False, dest=ADVICE_PACKAGES,
             action=StoreRequirementList, maxlen=1,
             metavar=metavar('PACKAGE'),

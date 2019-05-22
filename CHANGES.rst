@@ -1,6 +1,16 @@
 Changelog
 =========
 
+2.3.0 (20??-??-??)
+------------------
+
+- Provide the ``-T`` or ``--test-only`` flag to the ``karma`` runtime to
+  allow toolchain execution be terminated after the tests are executed
+  regardless of outcome.  This would generally allow the test to run
+  without forcing the toolchain to build the artifact.  [
+  `#11 <https://github.com/calmjs/calmjs.dev/issues/11>`_
+  ]
+
 2.2.2 (2018-08-17)
 ------------------
 

@@ -401,6 +401,29 @@ class CliRuntimeTestCase(unittest.TestCase):
         self.assertEqual(spec['karma_return_code'], 0)
         self.assertIn('link', spec)
 
+    def test_standard_manual_tests_success_run_canceled(self):
+        main = resource_filename('calmjs.dev', 'main.js')
+        test_main = resource_filename('calmjs.dev.tests', 'test_main.js')
+        spec = Spec(
+            # null toolchain does not prepare this
+            transpile_sourcepath={
+                'calmjs/dev/main': main,
+            },
+            test_module_paths_map={
+                'calmjs/test_main': test_main,
+            },
+            karma_halt_after_test=True,
+        )
+        toolchain = NullToolchain()
+        with pretty_logging(
+                logger='calmjs.dev', stream=mocks.StringIO()) as log:
+            self.driver.run(toolchain, spec)
+        self.assertIn(
+            'terminating toolchain execution after testing as specified',
+            log.getvalue())
+        self.assertEqual(spec['karma_return_code'], 0)
+        self.assertNotIn('link', spec)
+
     def test_standard_manual_tests_fail_run_abort(self):
         stub_stdouts(self)
         main = resource_filename('calmjs.dev', 'main.js')
@@ -566,6 +589,43 @@ class CliRuntimeTestCase(unittest.TestCase):
         # self.assertTrue(exists(result['karma_config_path']))
         # self.assertTrue(result.get('karma_abort_on_test_failure'))
 
+    def test_karma_runtime_integration_test_only(self):
+        stub_stdouts(self)
+        target = join(mkdtemp(self), 'target')
+        build_dir = mkdtemp(self)
+        stub_item_attr_value(
+            self, mocks, 'dummy',
+            ToolchainRuntime(NullToolchain()),
+        )
+        make_dummy_dist(self, ((
+            'entry_points.txt',
+            '[calmjs.runtime]\n'
+            'null = calmjs.testing.mocks:dummy\n'
+        ),), 'example.package', '1.0')
+        working_set = WorkingSet([self._calmjs_testing_tmpdir])
+        rt = KarmaRuntime(self.driver, working_set=working_set)
+        result = rt([
+            '-I',
+            '-T', 'null', '--export-target', target, '--build-dir', build_dir,
+        ])
+        self.assertIn('karma_config_path', result)
+        self.assertTrue(exists(result['karma_config_path']))
+        self.assertFalse(result.get('karma_abort_on_test_failure'))
+        # link step should not be run as the test aborted
+        self.assertNotIn('link', result)
+
+        result = rt([
+            '-I', '--only-test',
+            'null', '--export-target', target, '--build-dir', build_dir,
+        ])
+        self.assertNotIn('link', result)
+
+        # finally, test that if tests are skipped, but failures are not
+        # ignored, that the runtime will return an unsuccessful status.
+        self.assertFalse(rt([
+            '-T', 'null', '--export-target', target, '--build-dir', build_dir,
+        ]))
+
     def test_karma_runtime_integration_ignore_error(self):
         stub_stdouts(self)
         target = join(mkdtemp(self), 'target')
@@ -585,6 +645,8 @@ class CliRuntimeTestCase(unittest.TestCase):
             '-I', 'null', '--export-target', target, '--build-dir', build_dir,
         ])
         self.assertIn('karma_config_path', result)
+        # link step should be run regardless
+        self.assertIn('link', result)
         self.assertTrue(exists(result['karma_config_path']))
         self.assertFalse(result.get('karma_abort_on_test_failure'))
         self.assertIn(

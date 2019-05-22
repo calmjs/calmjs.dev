@@ -42,6 +42,7 @@ from calmjs.dev.karma import DEFAULT_COVER_REPORT_TYPE_OPTIONS
 from calmjs.dev.karma import KARMA_ABORT_ON_TEST_FAILURE
 from calmjs.dev.karma import KARMA_BROWSERS
 from calmjs.dev.karma import KARMA_EXTRA_FRAMEWORKS
+from calmjs.dev.karma import KARMA_HALT_AFTER_TEST
 
 logger = logging.getLogger(__name__)
 
@@ -380,6 +381,13 @@ class KarmaRuntime(Runtime, DriverRuntime):
             '-I', '--ignore-errors',
             dest=KARMA_ABORT_ON_TEST_FAILURE, action='store_false',
             help='do not abort execution on failure',
+        )
+
+        argparser.add_argument(
+            '-T', '--only-test',
+            dest=KARMA_HALT_AFTER_TEST, action='store_true',
+            help='run test for specified packages only, without continuing '
+                 'onto the artifact build process',
         )
 
     def _run_runtime(self, runtime, **kwargs):

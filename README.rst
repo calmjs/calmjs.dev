@@ -59,12 +59,12 @@ the generation of |webpack|_ artifacts supported through the
 .. |npm| replace:: ``npm``
 .. |setuptools| replace:: ``setuptools``
 .. |webpack| replace:: ``webpack``
-.. _Calmjs framework: https://pypi.python.org/pypi/calmjs
-.. _calmjs: https://pypi.python.org/pypi/calmjs
-.. _calmjs.rjs: https://pypi.python.org/pypi/calmjs.rjs
-.. _calmjs.webpack: https://pypi.python.org/pypi/calmjs.webpack
-.. _Node.js: https://nodejs.org
-.. _setuptools: https://pypi.python.org/pypi/setuptools
+.. _Calmjs framework: https://pypi.org/project/calmjs/
+.. _calmjs: https://pypi.org/project/calmjs/
+.. _calmjs.rjs: https://pypi.org/project/calmjs.rjs/
+.. _calmjs.webpack: https://pypi.org/project/calmjs.webpack/
+.. _Node.js: https://nodejs.org/
+.. _setuptools: https://pypi.org/project/setuptools/
 .. _webpack: https://webpack.js.org/
 
 
@@ -127,7 +127,7 @@ Naturally, since this is achieved through |calmjs|, it will need to be
 available in the target installation environment; however, this is
 achieved simply by installing |calmjs.dev| through ``pip`` from PyPI.
 
-.. code:: sh
+.. code:: console
 
     $ pip install calmjs.dev
 
@@ -139,7 +139,7 @@ and bug fixes, the development version may be desirable; however, the
 |calmjs| package *must* be installed first, otherwise the metadata must
 be regenerated after the installation, which can be achieved like so:
 
-.. code:: sh
+.. code:: console
 
     $ pip install git+https://github.com/calmjs/calmjs.git#egg=calmjs
 
@@ -167,7 +167,7 @@ packages required by this package can be installed into the current
 working directory through the |calmjs| executable with the included
 |npm| command:
 
-.. code:: sh
+.. code:: console
 
     $ calmjs npm --install calmjs.dev
 
@@ -177,7 +177,7 @@ Testing the installation
 Finally, to verify for the successful installation of |calmjs.dev|, the
 included tests may be executed through this command:
 
-.. code:: sh
+.. code:: console
 
     $ python -m unittest calmjs.dev.tests.make_suite
 
@@ -186,7 +186,7 @@ current directory was followed, the current directory may be specified
 as the ``CALMJS_TEST_ENV`` environment variable.  Under POSIX compatible
 shells this may be executed instead from within that directory:
 
-.. code:: sh
+.. code:: console
 
     $ CALMJS_TEST_ENV=. python -m unittest calmjs.dev.tests.make_suite
 
@@ -197,14 +197,33 @@ ensure proper error handling on real test failures.
 Usage
 -----
 
-The default tool is meant to provide an injectable runtime that sits
-before a |calmjs| toolchain runtime that is responsible for the
-generation of deployable artifacts, such as AMD bundles through
-RequireJS.  Currently, the standard way to use this package is to use it
-in conjunction of the |calmjs.rjs|_ toolchain runtime.  For instance,
-one might execute the ``r.js`` tool through |calmjs.rjs| like:
+This package provides features that may be used as part of the |calmjs|
+runtime, be used in conjunction with toolchains that already provide
+integration with the underlying toolchain for this package (which also
+implies that toolchain developers are provided the ability build these
+integration), and finally, a way for package developers to make use of
+these features to quickly set up their package for testing of their
+JavaScript sources in conjunction with these toolchains.
 
-.. code:: sh
+The default tool is meant to provide a |calmjs| runtime that is injected
+before a |calmjs| toolchain runtime that is responsible for the
+generation of deployable artifacts, such as AMD bundles (through
+RequireJS) or webpack bundles (through webpack).  Typically, this
+package is used in conjunction with the respective integration packages
+(e.g. |calmjs.rjs| and |calmjs.webpack|).  Those specific packages will
+have additional instructions on how they make use of this package, such
+as the instructions on how to create the entry points to support the
+testing of artifacts using the ``calmjs artifact karma`` command that
+is provided by this package.
+
+With RequireJS
+~~~~~~~~~~~~~~
+
+For instance, a developer might execute the ``r.js`` tool through
+|calmjs.rjs| for creation of an AMD bundle from their Python project
+using a command such as:
+
+.. code:: console
 
     $ calmjs rjs example.package
 
@@ -216,7 +235,7 @@ through the karma test runner provided by the selected package.  The
 command is as simple as adding ``karma`` before the toolchain runtime,
 like:
 
-.. code:: sh
+.. code:: console
 
     $ calmjs karma rjs example.package
 
@@ -224,15 +243,34 @@ This would apply a test advice to the ``rjs`` toolchain runtime and
 invoke it.  Normally, before the bundling is done, the tests will be
 executed against the transpiled sources in the build directory.  Note
 that the test advice is also implemented by |calmjs.rjs| to ensure that
-this testing workflow is properly integrated.  Likewise for
-|calmjs.webpack|, where its support for |webpack| is also provided
-through a similar mechanism such that the following command will execute
-the tests for the package through the typical |webpack| method of
-|karma| invocation:
+this testing workflow is properly integrated.
 
-.. code:: sh
+With webpack
+~~~~~~~~~~~~
+
+Likewise for |calmjs.webpack|, where its support for |webpack| is also
+provided through a similar mechanism such that the following command
+will execute the tests for the package through the typical |webpack|
+method of |karma| invocation:
+
+.. code:: console
 
     $ calmjs karma webpack example.package
+
+Skip artifact building
+~~~~~~~~~~~~~~~~~~~~~~
+
+If the generation of the artifact or bundle file after testing concludes
+(whether success or failure) is not desired, the ``-T`` or the
+``--only-test`` flag may be applied to the ``karma`` command like so:
+
+.. code:: console
+
+    $ calmjs karma -T webpack example.package
+    $ calmjs karma --only-test rjs example.package
+
+Easily test the generated bundle artifact using existing tests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To run tests against pre-generated artifact files, |calmjs.dev| provides
 a surrogate toolchain runtime specific for the ``karma`` command that
@@ -241,7 +279,7 @@ file (e.g. ``bundle.js``), it is possible to test whether it correctly
 included JavaScript code generated/provided by ``example.package`` using
 tests provided by the same package with the following command:
 
-.. code:: sh
+.. code:: console
 
     $ calmjs karma run \
         --artifact=bundle.js \
@@ -254,7 +292,7 @@ the ``--toolchain-package`` flag which serves a similar purpose as the
 ``--optional-advice`` flag for certain toolchains.  For |calmjs.rjs|,
 this is necessary.  The full command may be like so:
 
-.. code:: sh
+.. code:: console
 
     $ calmjs karma run \
         --artifact=bundle.js \
@@ -264,7 +302,7 @@ this is necessary.  The full command may be like so:
 Likewise for |webpack|; if the selected artifact file is generated
 through ``calmjs webpack``, it may be tested using the following:
 
-.. code:: sh
+.. code:: console
 
     $ calmjs karma run \
         --artifact=bundle.js \
@@ -292,7 +330,7 @@ of also testing the artifact whether or not the it is compatible with
 the sources being tested.  An example with the ``nunja.stock`` package
 which requires ``nunja``:
 
-.. code:: sh
+.. code:: console
 
     $ calmjs rjs nunja
     $ calmjs karma --coverage --artifact=nunja.js --cover-test \
@@ -321,7 +359,7 @@ in the package to be tested are created and the package has well-defined
 entries suitable for testing purpose, the following command may be
 executed to test the defined and generated artifacts:
 
-.. code:: sh
+.. code:: console
 
     $ calmjs artifact karma example.package
 
@@ -334,7 +372,7 @@ This functionality is implemented by the ``--test-with-package`` flag,
 which may be used to specify which package the artifact should source
 the tests from.
 
-.. code:: sh
+.. code:: console
 
     $ calmjs artifact karma example.package \
         --test-with-package example.dependent
@@ -370,7 +408,7 @@ environment.  Please ensure that is installed before trying again.  One
 method is to prepend |calmjs.dev| to the ``calmjs npm`` install command,
 e.g:
 
-.. code:: sh
+.. code:: console
 
     $ calmjs npm --install calmjs.dev ...
 
@@ -379,7 +417,7 @@ package, and instruct downstream users interested in the development of
 that package to install and use the package with that extras flag
 enabled.  For instance, ``nunja`` has the support for that:
 
-.. code:: sh
+.. code:: console
 
     $ calmjs npm --install nunja[dev]
 
@@ -401,7 +439,7 @@ Installation using the development method will show the above message if
 |calmjs| was not already installed into the current environment.  Please
 either reinstall, or regenerate the metadata by running:
 
-.. code:: sh
+.. code:: console
 
     $ python setup.py egg_info
 

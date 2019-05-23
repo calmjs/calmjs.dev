@@ -380,14 +380,15 @@ class KarmaRuntime(Runtime, DriverRuntime):
         argparser.add_argument(
             '-I', '--ignore-errors',
             dest=KARMA_ABORT_ON_TEST_FAILURE, action='store_false',
-            help='do not abort execution on failure',
+            help='do not terminate or abort execution on failure',
         )
 
         argparser.add_argument(
             '-T', '--only-test',
             dest=KARMA_HALT_AFTER_TEST, action='store_true',
-            help='run test for specified packages only, without continuing '
-                 'onto the artifact build process',
+            help='terminate or abort execution at the conclusion of test '
+                 'execution; no artifact build should be triggered as a '
+                 'result',
         )
 
     def _run_runtime(self, runtime, **kwargs):

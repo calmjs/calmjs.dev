@@ -21,6 +21,7 @@ KARMA_CONFIG = 'karma_config'
 KARMA_CONFIG_PATH = 'karma_config_path'
 KARMA_CONFIG_WRITER = 'karma_config_writer'
 KARMA_EXTRA_FRAMEWORKS = 'karma_extra_frameworks'
+KARMA_HALT_AFTER_TEST = 'karma_halt_after_test'
 KARMA_RETURN_CODE = 'karma_return_code'
 KARMA_SPEC_KEYS = 'karma_spec_keys'
 

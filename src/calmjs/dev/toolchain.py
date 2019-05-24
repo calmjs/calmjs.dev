@@ -14,6 +14,7 @@ from calmjs.dist import flatten_module_registry_names
 from calmjs.dev.karma import KARMA_BROWSERS
 from calmjs.dev.karma import KARMA_EXTRA_FRAMEWORKS
 from calmjs.dev.karma import KARMA_ABORT_ON_TEST_FAILURE
+from calmjs.dev.karma import KARMA_HALT_AFTER_TEST
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +83,7 @@ def update_spec_for_karma(spec, **kwargs):
         # default value, and keys to be assigned that
         (None, [
             KARMA_ABORT_ON_TEST_FAILURE,
+            KARMA_HALT_AFTER_TEST,
             COVERAGE_ENABLE,
             COVER_REPORT_DIR,
             COVER_REPORT_FILE,

@@ -11,8 +11,11 @@ from os.path import join
 from os.path import realpath
 from subprocess import call
 
-from calmjs.exc import AdviceAbort
-from calmjs.exc import ToolchainAbort
+from calmjs.types.exceptions import (
+    AdviceAbort,
+    ToolchainAbort,
+    ToolchainCancel,
+)
 
 from calmjs.registry import get
 
@@ -130,6 +133,14 @@ class KarmaDriver(NodeDriver):
             [binary, 'start', config_fn, '--color'], **call_kw)
 
         spec.handle(karma.AFTER_KARMA)
+
+    # these should be a self-contained function that apply the
+    # advice on the spec with its internal, closure function?
+
+    def halt_after_test(self, spec):
+        logger.debug(
+            'terminating toolchain execution after testing as specified')
+        raise ToolchainCancel('terminate after testing as specified')
 
     def abort_on_test_failure(self, spec):
         if spec.get(karma.KARMA_RETURN_CODE):
@@ -367,6 +378,9 @@ class KarmaDriver(NodeDriver):
         spec.advise(karma_advice_group, self.test_spec, spec)
         spec.advise(BEFORE_TEST, self.create_config, spec)
         spec.advise(karma.BEFORE_KARMA, self.write_config, spec)
+
+        if spec.get(karma.KARMA_HALT_AFTER_TEST):
+            spec.advise(AFTER_TEST, self.halt_after_test, spec)
 
         if spec.get(karma.KARMA_ABORT_ON_TEST_FAILURE):
             spec.advise(AFTER_TEST, self.abort_on_test_failure, spec)

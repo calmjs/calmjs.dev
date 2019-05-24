@@ -82,6 +82,9 @@ setup(
     namespace_packages=['calmjs'],
     include_package_data=True,
     zip_safe=False,
+    setup_requires=[
+        'calmjs>=3.3.0,<4',
+    ],
     install_requires=[
         'calmjs>=3.3.0,<4',
         'calmjs.parse>=1.0.0',

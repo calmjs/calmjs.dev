@@ -135,28 +135,41 @@ Alternative installation methods (for developers, advanced users)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Development is still ongoing with |calmjs.dev|, for the latest features
-and bug fixes, the development version may be desirable; however, the
-|calmjs| package *must* be installed first, otherwise the metadata must
-be regenerated after the installation, which can be achieved like so:
+and bug fixes, the development version may be desirable.  However, in
+order for the source installation to function correctly, the |calmjs|
+package *must* be available in the current environment for all the
+package metadata be correctly generated.  With recent versions of
+``pip`` and ``setuptools`` that correctly support the ``setup_requires``
+keyword, the following command should ensure that |calmjs| be available
+before ``pip`` attempts to set up this package.  The latest development
+version of this package may be installed using:
 
 .. code:: console
 
-    $ pip install git+https://github.com/calmjs/calmjs.git#egg=calmjs
+    $ pip install git+https://github.com/calmjs/calmjs.dev.git#egg=calmjs.dev
 
-Alternatively, the git repository can be cloned directly and execute
-``python setup.py develop`` while inside the root of the source
-directory.  Failure to do so will result in failure to install the
-development packages via |calmjs| from |npm|.  This failure can be
-verified by tests for this package failed to correctly execute, and the
-appearance of ``distribution option: 'package_json'`` warning message
-while installing this package.
+Or alternatively, clone the git repository manually and run the command
+manually, e.g.:
 
-As |calmjs| is declared as both a namespace and a package, mixing
-installation methods as described above when installing with other
-|calmjs| packages may result in the module importer being unable to look
-up the target files.  If such an error does arise please remove all
-modules and only stick with a single installation method for all
-packages within the |calmjs| namespace.
+.. code:: console
+
+    $ git clone https://github.com/calmjs/calmjs.dev.git
+    $ cd calmjs.dev
+    $ pip install -e .
+
+Failing to have |calmjs| be available before the source installation of
+|calmjs.dev| will result in the critical Node.js dependencies not being
+defined correctly for this package.  This may be corrected by
+regenerating them using the following at the root of this source based
+installation:
+
+.. code:: console
+
+    $ python setup.py egg_info
+
+If no error message that indicate the failure to usage of certain
+keywords, run the tests (documented in the next section) to be sure
+that the package is functioning correctly.
 
 Installation of Node.js external dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

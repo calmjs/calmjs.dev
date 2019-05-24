@@ -18,10 +18,7 @@ install:
   - virtualenv --clear venv
   - "venv\\Scripts\\activate.bat"
   - pip install coverage
-
-  # must be installed first, as this writes package_json into egg-info
-  - pip install -U calmjs
-  - python setup.py develop
+  - pip install -e .
 
 test_script:
   - coverage run --include=src/* -m unittest calmjs.dev.tests.make_suite

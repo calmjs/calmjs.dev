@@ -74,9 +74,7 @@ before_install:
 
 install:
   - pip install coverage flake8
-  # must be installed first, as this writes package_json into egg-info
-  - pip install -U calmjs
-  - python setup.py develop
+  - pip install -e .
 script:
   - flake8 setup.py src
   - coverage run --include=src/* -m unittest calmjs.dev.tests.make_suite

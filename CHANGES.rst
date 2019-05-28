@@ -1,7 +1,7 @@
 Changelog
 =========
 
-2.3.0 (20??-??-??)
+2.3.0 (2019-05-28)
 ------------------
 
 - Provide the ``-T`` or ``--test-only`` flag to the ``karma`` runtime to
